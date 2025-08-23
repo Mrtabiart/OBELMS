@@ -1,0 +1,44 @@
+.app {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f6fa;
+  }
+  
+  .mcontent {
+    flex: 1;
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+  }
+  
+  .sidebar.closed + .mcontent {
+    margin-left: 70px;
+  }
+
+  .back-botn{
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    margin-bottom: 1rem;
+    padding: 5px ;
+  }
+
+::-webkit-scrollbar {
+  width: 10px; 
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f100; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #152c69; 
+  border-radius: 5px; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0f2250; 
+}
+
+
+* {
+  scrollbar-width: thin; 
+  scrollbar-color: #152c69 #f1f1f100; 
+}

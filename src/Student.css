@@ -1,0 +1,122 @@
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 3.4rem;
+    height: 100vh;
+    background-color: #152c69;
+    color: white;
+    transition: all 0.3s ease;
+    width: 260px;
+    z-index: 10001;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sidebar.closed {
+    width: 70px;
+  }
+  
+  .sidebar-handle {
+    position: absolute;
+    right: -40px;
+    top: 10px;
+    width: 40px;
+    height: 40px;
+    background: #283593;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 1s ease-in;
+  }
+  
+  .sidebar-handle:hover {
+    background: #1a237e;
+  }
+  
+  .sidebar-content {
+    padding: 24px 16px;
+    overflow: hidden;
+  }
+  
+  .sidebar-title {
+    font-size: 24px;
+    margin-bottom: 32px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .menu-item {
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  
+  .menu-ic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  
+  .menu-text {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  
+  .menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateX(4px);
+  }
+  
+  .menu-item:active {
+    transform: translateX(2px);
+  }
+  
+  .sidebar.closed .menu-text {
+    display: none;
+  }
+  
+  .sidebar.closed .menu-icon {
+    margin: 0 auto;
+  }
+  
+  .sidebar.closed .sidebar-title {
+    display: none;
+  }
+  
+  .sidebar.closed .sidebar-content {
+    padding: 24px 12px;
+  }
+  
+  .sidebar.closed .menu-item {
+    padding: 14px;
+    justify-content: center;
+  }
+  
+  .menu-icon svg {
+    transition: transform 0.3s ease;
+  }
+  
+  .menu-item:hover .menu-icon svg {
+    transform: scale(1.1);
+  }

@@ -1,0 +1,234 @@
+
+.gpacal-container {
+ padding: 20px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f8fafc;
+  min-height: 90vh;
+}
+
+.gpacal-header {
+  background: linear-gradient(135deg, #2054c4,  #152c69);
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.gpacal-header h1 {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.gpacal-tab-container {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.gpacal-tab-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.gpacal-tab-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.gpacal-tab-button.active {
+  background: white;
+  color: #2054c4;
+}
+
+.gpacal-card {
+  background: #f8faff;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow:0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.gpacal-card h2 {
+  color:#2054c4;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.gpacal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gpacal-grid-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 40px;
+  gap: 1rem;
+  padding: 0.5rem;
+  font-weight: 600;
+  color: #2054c4;
+}
+
+.gpacal-grid {
+  display: flex;
+  flex-direction: row;
+  /* grid-template-columns: 1fr 1fr 1fr 40px; */
+  gap: 1rem;
+  align-items: center;
+}
+
+.gpacal-grid input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid  #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.gpacal-grid input:focus {
+  outline: none;
+  border-color: #2054c4;
+  box-shadow: 0 0 0 2px rgba(32, 84, 196, 0.1);
+}
+
+.gpacal-button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.gpacal-add-button {
+  background: linear-gradient(135deg, #2054c4,  #152c69);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.gpacal-add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(32, 84, 196, 0.2);
+}
+
+.gpacal-calculate-button {
+  background: linear-gradient(135deg,  #152c69,#2054c4);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius:8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.gpacal-calculate-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(21, 44, 105, 0.2);
+}
+
+.gpacal-remove-button {
+  background: transparent;
+  color: #e53e3e;
+  /* border: 1px solid #e53e3e; */
+  width: 20px;
+  height: 40px;
+  border-radius: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.gpacal-remove-button:hover {
+  background:#e53e3e;
+  color: white;
+}
+
+.gpacal-results {
+  background: linear-gradient(135deg, #f0f7ff, #e6f0ff);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: 1rem;
+  border-left: 4px solid #2054c4;
+}
+
+.gpacal-result-display {
+  margin-bottom: 1rem;
+}
+
+.gpacal-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color:#2054c4;
+  line-height: 1.2;
+}
+
+.gpacal-label {
+  font-size: 1.1rem;
+  color:  #666666;
+  font-weight: 500;
+}
+
+.gpacal-grade {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color:  #152c69;
+}
+
+.gpacal-error {
+  color: #e53e3e;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(229, 62, 62, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .gpacal-container {
+    padding: 1rem;
+  }
+
+  .gpacal-header {
+    padding: 1.5rem;
+  }
+
+  .gpacal-grid-header {
+    display: none;
+  }
+
+  .gpacal-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .gpacal-remove-button {
+    margin: 0.5rem auto;
+  }
+
+  .gpacal-button-group {
+    flex-direction: column;
+  }
+
+  .gpacal-add-button,
+  .gpacal-calculate-button {
+    width: 100%;
+  }
+}

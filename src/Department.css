@@ -1,0 +1,477 @@
+.department-container {
+  padding: 10px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.add-department-section {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e8f5;
+}
+
+.add-department-section h2 {
+  color: #1e3a8a;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.add-department-section form {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.add-department-section input {
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 200px;
+  font-size: 1rem;
+  color: black;
+  background-color: white;
+  transition: border-color 0.2s;
+}
+
+.add-department-section input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.department-stats {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.department-stats h3 {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.department-stats p {
+  margin: 5px 0 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+.department-table {
+  background-color: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e8f5;
+}
+
+.department-table h2 {
+  color: #1e3a8a;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+  padding-left: 8px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e1e8f5;
+}
+
+@keyframes appeary {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.deptabletrans {
+  opacity: 0;
+  transform: translateY(40px); 
+  animation: appeary 0.6s forwards;
+  transition: all 0.3s ease;
+}
+
+.deptabletrans:nth-child(1) { animation-delay: 0.5s; }
+.deptabletrans:nth-child(2) { animation-delay: 0.8s; }
+.deptabletrans:nth-child(3) { animation-delay: 1.1s; }
+.deptabletrans:nth-child(4) { animation-delay: 1.4s; }
+.deptabletrans:nth-child(5) { animation-delay: 1.7s; }
+.deptabletrans:nth-child(6) { animation-delay: 2.0s; }
+.deptabletrans:nth-child(7) { animation-delay: 2.3s; }
+.deptabletrans:nth-child(8) { animation-delay: 2.6s; }
+.deptabletrans:nth-child(9) { animation-delay: 2.9s; }
+.deptabletrans:nth-child(10) { animation-delay: 3.1s; }
+
+
+th, td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e1e8f5;
+}
+
+th {
+  background-color: #f1f5f9;
+  color: #1e3a8a;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 20px 16px;
+}
+
+th:first-child {
+  padding-left: 24px;
+}
+
+th:last-child {
+  padding-right: 24px;
+}
+
+td {
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+td:first-child {
+  padding-left: 24px;
+  font-weight: 500;
+}
+
+td:last-child {
+  padding-right: 24px;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background-color: #f8fafc;
+}
+
+.Dep-button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.view-btn {
+  background-color: #2563eb;
+  padding: 10px 20px;
+}
+
+.view-btn:hover {
+  background-color: #1e40af;
+}
+
+.update-btn {
+  background-color: #059669;
+}
+
+.update-btn:hover {
+  background-color: #047857;
+}
+
+.delete-btn {
+  background-color: #dc2626;
+}
+.semester-btn{
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+}
+.semester-btn:hover{
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+}
+
+.delete-btn:hover {
+  background-color: #b91c1c;
+}
+
+button[type="submit"] {
+  background-color: #1e3a8a;
+  padding: 12px 24px;
+  font-weight: 600;
+}
+
+button[type="submit"]:hover {
+  background-color: #1e3a8a;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content h2 {
+  color: #1e3a8a;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-body p {
+  margin: 10px 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.modal-body strong {
+  color: #1e3a8a;
+}
+
+.close-btn {
+  width: 100%;
+  background-color: #2563eb;
+}
+
+.delete-modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+}
+
+.delete-modal-content h2 {
+  color: #dc2626;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.delete-warning {
+  display: flex;
+  align-items: center;
+  color: #dc2626;
+  margin-bottom: 15px;
+  gap: 10px;
+}
+
+.delete-warning svg {
+  color: #dc2626;
+}
+
+.department-to-delete {
+  background-color: #fee2e2;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #dc2626;
+}
+
+.department-to-delete p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.confirmation-instruction {
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #4b5563;
+}
+
+.delete-confirmation-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.delete-confirmation-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.delete-confirmation-input.error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.name-error {
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
+.delete-modal-body {
+  margin-bottom: 25px;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.cancel-btn {
+  flex: 1;
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.cancel-btn:hover {
+  background-color: #d1d5db;
+}
+
+.confirm-delete-btn {
+  flex: 1;
+  background-color: #dc2626;
+}
+
+.confirm-delete-btn:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.confirm-delete-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.confirm-delete-btn.enabled {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+@media (max-width: 768px) {
+  .department-container {
+    padding: 15px;
+  }
+
+  .add-department-section form {
+    flex-direction: column;
+  }
+
+  .add-department-section input {
+    width: 100%;
+  }
+
+  .table-container {
+    margin: 0 -25px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  th, td {
+    padding: 12px 16px;
+  }
+
+  th:first-child,
+  td:first-child {
+    padding-left: 16px;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 16px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 80px;
+  }
+
+  .modal-content,
+  .delete-modal-content {
+    width: 95%;
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .delete-modal-actions {
+    flex-direction: column;
+  }
+}

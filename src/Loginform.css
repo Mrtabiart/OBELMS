@@ -1,0 +1,265 @@
+.login-container {
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(243, 243, 243);
+  background-image: url('./Asset/banner.png');
+  background-size: cover;       
+  background-position: center;  
+  background-repeat: no-repeat; 
+  padding: 20px;
+  margin-top: -40px;
+  position: relative; 
+}
+
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(31, 72, 134, 0.178); 
+  z-index: 1; 
+}
+
+.login-card {
+  background: rgba(230, 230, 230, 0.432);
+  border-radius: 30px;
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 
+    0 10px 25px rgba(32, 84, 196, 0.1),
+    0 20px 48px rgba(32, 84, 196, 0.13),
+    0 1px 4px rgba(32, 84, 196, 0.08);
+  
+  backdrop-filter: blur(10px); 
+  -webkit-backdrop-filter: blur(10px); 
+  
+  position: relative;
+  overflow: hidden;
+  z-index: 4;
+}
+  
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #2054c4, #152c69);
+  }
+  
+  @keyframes cardFloat {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .login-header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  
+  .login-header::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #2054c4, #152c69);
+    border-radius: 2px;
+  }
+  
+  .login-header h1 {
+    color: #152c69;
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    margin-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  
+  .login-header p {
+    color: #152c69;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 3vw, 20px);
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .form-group label {
+    color: #152c69;
+    font-weight: 600;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: clamp(10px, 2vw, 12px) clamp(12px, 3vw, 16px);
+    border: .1px solid #152b6963;
+    border-radius: 12px;
+    color: black;
+    background-color: white;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    background: rgba(230, 230, 230, 0.589);
+
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    color: black;
+    background-color: white;
+    border-color: #2054c4;
+  }
+  
+  .form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23152c69' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+  }
+  
+  .form-group select option {
+    padding: 15px;
+    background-color: white;
+    color: #152c69;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease forwards;
+    transform-origin: top;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .form-group select option:hover {
+    background-color: #f0f4ff;
+  }
+  
+  .form-group select option:checked {
+    background: linear-gradient(to right, #2054c4, #152c69);
+    color: white;
+  }
+  
+  .forgot-password {
+    background: none;
+    border: none;
+    color: #122558;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    text-align: right;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 20px;
+    transition: color 0.3s ease;
+    position: relative;
+  }
+  
+  .forgot-password:hover {
+    color: #152c69;
+  }
+  
+  .forgot-password::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+    transform-origin: right;
+  }
+  
+  .forgot-password:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  
+  .login-button {
+    background: linear-gradient(to right, #2054c4, #152c69);
+    color: white;
+    padding: clamp(12px, 2.5vw, 14px);
+    border: none;
+    border-radius: 12px;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .login-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #152c69, #2054c4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .login-button:hover {
+    transform: translateY(-2px);
+    color: white;
+    box-shadow: 
+      0 4px 12px rgba(32, 84, 196, 0.15),
+      0 8px 24px rgba(32, 84, 196, 0.15);
+    
+  }
+  
+  
+  .login-button:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 480px) {
+    .login-card {
+      padding: clamp(20px, 5vw, 40px);
+      margin: 10px;
+    }
+    
+    .login-header {
+      margin-bottom: 30px;
+    }
+  }

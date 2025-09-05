@@ -7,14 +7,6 @@ const MongoStore = require('connect-mongo');
 const path = require('path');
 require("dotenv").config();
 
-const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'SESSION_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingEnvVars.length > 0) {
-  console.warn(`Warning: Missing environment variables: ${missingEnvVars.join(', ')}`);
-  console.warn('The application may not function correctly without these variables set.');
-}
-
 const app = express();
 
 app.use(cors({
@@ -26,7 +18,6 @@ app.use(cors({
 
 app.use(cookieParser());
 app.use(express.json());
-
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
@@ -61,17 +52,21 @@ app.get('/api/health', (req, res) => {
 
 console.log("Attempting to connect to MongoDB...");
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("successfully"))
+  .then(() => console.log("MongoDB connected successfully"))
   .catch((err) => {
     console.error("MongoDB connection error:", err);
     console.error("WARNING: Server starting without MongoDB connection!");
   });
 
+// ✅ YEH NAYA ROUTE ADD KAREIN - CLO-PLO Mapping ka alag route
+app.use("/api/cloplo", require("./routes/cloplogettingsub"));
+
+// ✅ Purane routes (jo pehle se hain)
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/departments", require("./routes/departmentRoutes"));
 app.use("/api/programs", require("./routes/programRoutes"));
 app.use("/api/subjects", require("./routes/subjectRoutes"));
-app.use("/api/teachers", require("./routes/teacherRoutes"));
+app.use("/api/teachers", require("./routes/teacherRoutes")); // ✅ Yeh rahega
 app.use("/api/semesters", require("./routes/semesterRoutes"));
 app.use("/api/trash", require("./routes/trashRoutes"));
 app.use("/api/students", require("./routes/studentRoutes"));
@@ -83,4 +78,5 @@ app.use("/api/lostfound", require("./routes/lostfoundRoutes"));
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`CLO-PLO mapping available at: http://localhost:${PORT}/api/cloplo/clo-plo-mapping/:courseId`);
 });

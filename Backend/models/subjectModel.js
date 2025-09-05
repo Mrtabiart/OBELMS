@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const CloSchema = new mongoose.Schema({
-  number: {
+  clonumber: {
     type: String,
     required: [true, "CLO number is required"],
     trim: true

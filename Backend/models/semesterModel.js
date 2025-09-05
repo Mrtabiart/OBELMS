@@ -29,7 +29,24 @@ const courseSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Teacher',  
     required: true
+  },
+  semesterNumber: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 8
   }
+}, { _id: true, timestamps: true });
+
+const semesterContentSchema = new mongoose.Schema({
+  semesterNumber: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 8
+  },
+  courses: [courseSchema],
+  students: [studentSchema]
 }, { _id: true, timestamps: true });
 
 const semesterSchema = new mongoose.Schema({
@@ -50,8 +67,7 @@ const semesterSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  courses: [courseSchema],
-  students: [studentSchema]
+  semesterContents: [semesterContentSchema] // Array of semester contents
 }, { timestamps: true });
 
 const Semester = mongoose.model('Semester', semesterSchema);

@@ -42,3 +42,8 @@
   scrollbar-width: thin; 
   scrollbar-color: #152c69 #f1f1f100; 
 }
+
+input{
+  background: white;
+  color: #000;
+}

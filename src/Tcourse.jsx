@@ -58,18 +58,20 @@ const TeacherPanel = ({ setcomp }) => {
     fetchSubjects();
   }, []);
 
-  const handleCourseClick = (course) => {
-    const semesterId = course.semesters[0];
-    
-    sessionStorage.setItem('currentSemester', semesterId);
-    
-   
-    if (course.isLab == true) {
+ // ... existing code ...
+ const handleCourseClick = (course) => {
+  const semesterId = course.semesters[0];
+  
+  // Store both course ID and semester ID in sessionStorage
+  sessionStorage.setItem('currentCourseId', course._id);
+  sessionStorage.setItem('currentSemester', semesterId);
+  
+  if (course.isLab == true) {
     setcomp("Lab");
   } else {
     setcomp("Subjectsheet");
   }
-  };
+};
 
   if (loading) {
     return (

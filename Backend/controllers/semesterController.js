@@ -10,13 +10,13 @@ exports.getAllSemesters = async (req, res) => {
     const semesters = await Semester.find()
       .populate('programId', 'name code')
       .populate({
-        path: 'courses.teacherId',
+        path: 'semesterContents.courses.teacherId',
         model: 'Teacher',
         select: 'name email'
       })
       .populate({
-        path: 'courses.subjectId',
-        model: 'subject',  // Add model name
+        path: 'semesterContents.courses.subjectId',
+        model: 'subject',
         select: 'code name isLab'
       })
       .sort({ startDate: -1 });
@@ -47,13 +47,13 @@ exports.getSemestersByProgram = async (req, res) => {
     const semesters = await Semester.find({ programId })
       .populate('programId', 'name code')
       .populate({
-        path: 'courses.teacherId',
+        path: 'semesterContents.courses.teacherId',
         model: 'Teacher',
         select: 'name email'
       })
       .populate({
-        path: 'courses.subjectId',
-        model: 'subject',  // Add model name
+        path: 'semesterContents.courses.subjectId',
+        model: 'subject',
         select: 'code name isLab'
       })
       .sort({ startDate: -1 });
@@ -83,13 +83,13 @@ exports.getSemesterById = async (req, res) => {
     const semester = await Semester.findById(semesterId)
       .populate('programId', 'name code')
       .populate({
-        path: 'courses.teacherId',
+        path: 'semesterContents.courses.teacherId',
         model: 'Teacher',
         select: 'name email'
       })
       .populate({
-        path: 'courses.subjectId',
-        model: 'subject',  // Add model name
+        path: 'semesterContents.courses.subjectId',
+        model: 'subject',
         select: 'code name isLab'
       });
     
@@ -116,13 +116,17 @@ exports.createSemester = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
     
+    // Initialize with first semester content
     const newSemester = new Semester({
       programId,
       startDate,
       endDate,
       session,
-      courses: [],
-      students: []
+      semesterContents: [{
+        semesterNumber: 1,
+        courses: [],
+        students: []
+      }]
     });
     
     const savedSemester = await newSemester.save();
@@ -144,13 +148,13 @@ exports.updateSemester = async (req, res) => {
       { new: true }
     )
     .populate({
-      path: 'courses.teacherId',
+      path: 'semesterContents.courses.teacherId',
       model: 'Teacher',
       select: 'name email'
     })
     .populate({
-      path: 'courses.subjectId',
-      model: 'subject',  // Add model name
+      path: 'semesterContents.courses.subjectId',
+      model: 'subject',
       select: 'code name isLab'
     });
     
@@ -180,14 +184,98 @@ exports.deleteSemester = async (req, res) => {
   }
 };
 
-exports.addCourse = async (req, res) => {
+// Add new semester content section
+exports.addSemesterContent = async (req, res) => {
   try {
-    const { subjectId, teacherId } = req.body;
     const semesterId = req.params.id;
+    const { semesterNumber } = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(semesterId)) {
+      return res.status(400).json({ message: "Invalid semester ID format" });
+    }
+    
+    if (semesterNumber < 1 || semesterNumber > 8) {
+      return res.status(400).json({ message: "Semester number must be between 1 and 8" });
+    }
     
     const semester = await Semester.findById(semesterId);
     if (!semester) {
       return res.status(404).json({ message: "Semester not found" });
+    }
+    
+    // Check if semester content already exists
+    const existingContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
+    
+    if (existingContent) {
+      return res.status(400).json({ message: "Semester content already exists for this number" });
+    }
+    
+    // Find the previous semester content to copy ONLY students from
+    let previousStudents = [];
+    
+    if (semester.semesterContents.length > 0) {
+      // Get the last semester content (highest semester number)
+      const lastContent = semester.semesterContents[semester.semesterContents.length - 1];
+      previousStudents = [...lastContent.students]; // Copy only students
+    }
+    
+    // Add new semester content with copied students but empty courses
+    semester.semesterContents.push({
+      semesterNumber,
+      courses: [], // Empty courses array - you'll add courses manually
+      students: previousStudents // Copy previous students
+    });
+    
+    const updatedSemester = await semester.save();
+    
+    // Update teacher records - remove this semester from all teachers
+    await Teacher.updateMany(
+      { 'semesters.semesterId': semesterId },
+      { $pull: { semesters: { semesterId: semesterId } } }
+    );
+    
+    const populatedSemester = await Semester.findById(updatedSemester._id)
+      .populate({
+        path: 'semesterContents.courses.teacherId',
+        model: 'Teacher',
+        select: 'name email'
+      })
+      .populate({
+        path: 'semesterContents.courses.subjectId',
+        model: 'subject',
+        select: 'code name isLab'
+      });
+    
+    res.status(200).json(populatedSemester);
+  } catch (error) {
+    console.error("Error adding semester content:", error);
+    res.status(500).json({ message: "Failed to add semester content", error: error.message });
+  }
+};
+
+exports.addCourse = async (req, res) => {
+  try {
+    const { subjectId, teacherId, semesterNumber } = req.body;
+    const semesterId = req.params.id;
+    
+    if (!mongoose.Types.ObjectId.isValid(semesterId)) {
+      return res.status(400).json({ message: "Invalid semester ID format" });
+    }
+    
+    const semester = await Semester.findById(semesterId);
+    if (!semester) {
+      return res.status(404).json({ message: "Semester not found" });
+    }
+    
+    // Find the specific semester content
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
+    
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
     }
     
     const subject = await Subject.findById(subjectId);
@@ -205,17 +293,23 @@ exports.addCourse = async (req, res) => {
       return res.status(404).json({ message: "Teacher not found" });
     }
     
-    const courseExists = semester.courses.some(course => 
+    const courseExists = semesterContent.courses.some(course => 
       course.subjectId.equals(subjectId)
     );
     
     if (courseExists) {
-      return res.status(400).json({ message: "Course already exists in this semester" });
+      return res.status(400).json({ message: "Course already exists in this semester content" });
     }
     
-    semester.courses.push({ subjectId, teacherId });
+    semesterContent.courses.push({ 
+      subjectId, 
+      teacherId, 
+      semesterNumber 
+    });
+    
     const updatedSemester = await semester.save();
     
+    // Update teacher record
     const semesterIndex = teacher.semesters.findIndex(sem => 
       sem.semesterId.equals(semester._id)
     );
@@ -239,13 +333,13 @@ exports.addCourse = async (req, res) => {
   
     const populatedSemester = await Semester.findById(updatedSemester._id)
       .populate({
-        path: 'courses.teacherId',
+        path: 'semesterContents.courses.teacherId',
         model: 'Teacher',
         select: 'name email'
       })
       .populate({
-        path: 'courses.subjectId',
-        model: 'subject',  // Add model name
+        path: 'semesterContents.courses.subjectId',
+        model: 'subject',
         select: 'code name isLab'
       });
     
@@ -260,6 +354,7 @@ exports.removeCourse = async (req, res) => {
   try {
     const courseId = req.params.courseId;
     const semesterId = req.params.id;
+    const { semesterNumber } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(semesterId) || !mongoose.Types.ObjectId.isValid(courseId)) {
       return res.status(400).json({ message: "Invalid ID format" });
@@ -270,20 +365,29 @@ exports.removeCourse = async (req, res) => {
       return res.status(404).json({ message: "Semester not found" });
     }
     
-    const courseIndex = semester.courses.findIndex(course => course._id.toString() === courseId);
+    // Find the specific semester content
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
     
-    if (courseIndex === -1) {
-      return res.status(404).json({ message: "Course not found in this semester" });
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
     }
     
-    const courseInfo = semester.courses[courseIndex];
+    const courseIndex = semesterContent.courses.findIndex(course => course._id.toString() === courseId);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: "Course not found in this semester content" });
+    }
+    
+    const courseInfo = semesterContent.courses[courseIndex];
     const teacherId = courseInfo.teacherId;
     const subjectId = courseInfo.subjectId;
     
-    semester.courses.splice(courseIndex, 1);
+    semesterContent.courses.splice(courseIndex, 1);
     const updatedSemester = await semester.save();
     
-    // Teacher update logic
+    // Teacher update logic - remove this specific course from teacher's record
     if (teacherId) {
       const teacher = await Teacher.findById(teacherId);
       if (teacher) {
@@ -299,6 +403,7 @@ exports.removeCourse = async (req, res) => {
           if (subjectIndex !== -1) {
             teacher.semesters[semesterIndex].subjects.splice(subjectIndex, 1);
             
+            // If no subjects left in this semester, remove the entire semester entry
             if (teacher.semesters[semesterIndex].subjects.length === 0) {
               teacher.semesters.splice(semesterIndex, 1);
             }
@@ -311,12 +416,12 @@ exports.removeCourse = async (req, res) => {
   
     const finalSemester = await Semester.findById(updatedSemester._id)
       .populate({
-        path: 'courses.teacherId',
+        path: 'semesterContents.courses.teacherId',
         model: 'Teacher',
         select: 'name email'
       })
       .populate({
-        path: 'courses.subjectId',
+        path: 'semesterContents.courses.subjectId',
         model: 'subject',
         select: 'code name isLab'
       });
@@ -334,9 +439,10 @@ exports.removeCourse = async (req, res) => {
     });
   }
 };
+
 exports.addStudent = async (req, res) => {
   try {
-    const { rollNumber, name, email } = req.body;
+    const { rollNumber, name, email, semesterNumber } = req.body;
     const semesterId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(semesterId)) {
@@ -348,11 +454,20 @@ exports.addStudent = async (req, res) => {
       return res.status(404).json({ message: "Semester not found" });
     }
 
-    const studentExists = semester.students.some(student =>
+    // Find the specific semester content
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
+    
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
+    }
+
+    const studentExists = semesterContent.students.some(student =>
       student.rollNumber === rollNumber || student.email === email
     );
     if (studentExists) {
-      return res.status(400).json({ message: "Student with this roll number or email already exists in this semester" });
+      return res.status(400).json({ message: "Student with this roll number or email already exists in this semester content" });
     }
 
     const universityStudent = await Student.findOne({
@@ -374,7 +489,7 @@ exports.addStudent = async (req, res) => {
     }
 
     // Add student with document ID
-    semester.students.push({ 
+    semesterContent.students.push({ 
       rollNumber, 
       name, 
       email, 
@@ -400,7 +515,7 @@ exports.addStudent = async (req, res) => {
 
 exports.addMultipleStudents = async (req, res) => {
   try {
-    const { students } = req.body;
+    const { students, semesterNumber } = req.body;
     const semesterId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(semesterId)) {
@@ -412,12 +527,21 @@ exports.addMultipleStudents = async (req, res) => {
       return res.status(404).json({ message: "Semester not found" });
     }
 
+    // Find the specific semester content
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
+    
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
+    }
+
     if (!Array.isArray(students) || students.length === 0) {
       return res.status(400).json({ message: "Invalid student data format" });
     }
 
-    const existingRollNumbers = new Set(semester.students.map(s => s.rollNumber));
-    const existingEmails = new Set(semester.students.map(s => s.email));
+    const existingRollNumbers = new Set(semesterContent.students.map(s => s.rollNumber));
+    const existingEmails = new Set(semesterContent.students.map(s => s.email));
 
     const validStudents = [];
     const invalidStudents = [];
@@ -426,7 +550,7 @@ exports.addMultipleStudents = async (req, res) => {
       if (existingRollNumbers.has(student.rollNumber)) {
         invalidStudents.push({
           ...student,
-          reason: "Already exists in this semester"
+          reason: "Already exists in this semester content"
         });
         continue;
       }
@@ -434,7 +558,7 @@ exports.addMultipleStudents = async (req, res) => {
       if (existingEmails.has(student.email)) {
         invalidStudents.push({
           ...student,
-          reason: "Email already exists in this semester"
+          reason: "Email already exists in this semester content"
         });
         continue;
       }
@@ -482,7 +606,7 @@ exports.addMultipleStudents = async (req, res) => {
       studentid: v.universityStudent._id
     }));
 
-    semester.students = [...semester.students, ...studentsToAdd];
+    semesterContent.students = [...semesterContent.students, ...studentsToAdd];
     const updatedSemester = await semester.save();
 
     await Promise.all(
@@ -516,20 +640,30 @@ exports.removeStudent = async (req, res) => {
   try {
     const studentId = req.params.studentId;
     const semesterId = req.params.id;
+    const { semesterNumber } = req.body;
     
     const semester = await Semester.findById(semesterId);
     if (!semester) {
       return res.status(404).json({ message: "Semester not found" });
     }
     
-    const studentIndex = semester.students.findIndex(student => student._id.toString() === studentId);
+    // Find the specific semester content
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === semesterNumber
+    );
     
-    if (studentIndex === -1) {
-      return res.status(404).json({ message: "Student not found in this semester" });
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
     }
     
-    const studentRollNumber = semester.students[studentIndex].rollNumber;
-    const studentDocumentId = semester.students[studentIndex].studentid;
+    const studentIndex = semesterContent.students.findIndex(student => student._id.toString() === studentId);
+    
+    if (studentIndex === -1) {
+      return res.status(404).json({ message: "Student not found in this semester content" });
+    }
+    
+    const studentRollNumber = semesterContent.students[studentIndex].rollNumber;
+    const studentDocumentId = semesterContent.students[studentIndex].studentid;
     
     const universityStudent = await Student.findById(studentDocumentId || studentRollNumber);
     
@@ -538,15 +672,45 @@ exports.removeStudent = async (req, res) => {
       await universityStudent.save();
     }
     
-    semester.students.splice(studentIndex, 1);
+    semesterContent.students.splice(studentIndex, 1);
     const updatedSemester = await semester.save();
     
     res.status(200).json({ 
-      message: "Student removed successfully from semester and student record updated", 
+      message: "Student removed successfully from semester content and student record updated", 
       semester: updatedSemester 
     });
   } catch (error) {
     console.error("Error removing student:", error);
     res.status(500).json({ message: "Failed to remove student", error: error.message });
+  }
+};
+
+// Get semester content by semester number
+exports.getSemesterContent = async (req, res) => {
+  try {
+    const semesterId = req.params.id;
+    const { semesterNumber } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(semesterId)) {
+      return res.status(400).json({ message: "Invalid semester ID format" });
+    }
+    
+    const semester = await Semester.findById(semesterId);
+    if (!semester) {
+      return res.status(404).json({ message: "Semester not found" });
+    }
+    
+    const semesterContent = semester.semesterContents.find(
+      content => content.semesterNumber === parseInt(semesterNumber)
+    );
+    
+    if (!semesterContent) {
+      return res.status(404).json({ message: "Semester content not found" });
+    }
+    
+    res.status(200).json(semesterContent);
+  } catch (error) {
+    console.error("Error getting semester content:", error);
+    res.status(500).json({ message: "Failed to get semester content", error: error.message });
   }
 };

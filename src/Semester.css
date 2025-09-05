@@ -49,7 +49,7 @@
 @media (prefers-color-scheme: dark) {
   .custom-date-input {
     color: black;
-    background-color: white;
+    background-color: rgb(255, 255, 255);
   }
 }
 
@@ -92,7 +92,10 @@
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
-
+.custom-date-input {
+  color: black;
+  background-color: rgb(255, 255, 255);
+}
 .semesters-table th,
 .semesters-table td {
   padding: 1rem;
@@ -101,9 +104,9 @@
 }
 
 .semesters-table th {
-  background-color: #f7fafc;
+  background-color: #ffffff;
   font-weight: 600;
-  color: #2d3748;
+  color: #000000;
 }
 
 .semesters-table tr:last-child td {
@@ -141,7 +144,7 @@
 .semester-details {
   background: white;
   margin-top: 1rem;
-  padding: 1rem;
+  padding: 2rem 1rem 2rem 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
@@ -256,26 +259,22 @@
   z-index: 1000;
 }
 
-.modal {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
+/* Enhanced Modal Header Design */
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .modal-header h3 {
   color: #2d3748;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  flex: 1;
 }
 
 .close-btn {
@@ -283,16 +282,33 @@
   border: none;
   color: #4a5568;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
+  padding: 0;
   transition: all 0.2s;
-  justify-items: end;
-  justify-content: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
 .close-btn:hover {
-  background-color: #edf2f7;
   color: #e53e3e;
+  transform: scale(1.1);
+}
+
+/* Enhanced Modal Styling */
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e2e8f0;
+}
+
+.modal-content {
+  text-align: center;
 }
 
 .student-form {
@@ -431,4 +447,412 @@
   .add-course {
     flex-direction: column;
   }
+}
+
+/* Add New Semester Button */
+.add-semester-btn {
+  background-color: #ed8936;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.add-semester-btn:hover {
+  background-color: #dd6b20;
+  transform: translateY(-1px);
+}
+
+/* Disabled state for Add Semester button */
+.add-semester-btn.disabled {
+  background-color: #a0aec0;
+  color: #718096;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.add-semester-btn.disabled:hover {
+  background-color: #a0aec0;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Numbered Content Sections */
+.numbered-content-sections {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.section-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.section-tab {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #4a5568;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-tab:hover {
+  border-color: #4299e1;
+  color: #4299e1;
+  transform: translateY(-2px);
+}
+
+.section-tab.active {
+  background-color: #4299e1;
+  border-color: #4299e1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+}
+
+.content-area {
+  min-height: 200px;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.content-section h4 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.content-section p {
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #4a5568;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f7fafc;
+  border-color: #4299e1;
+  color: #4299e1;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: #4a5568;
+  font-weight: 500;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-tabs {
+    justify-content: center;
+  }
+  
+  .section-tab {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .page-info {
+    min-width: auto;
+  }
+}
+
+/* Previous Semester Styling */
+.previous-semester {
+  opacity: 0.8;
+  background: #f8f9fa;
+}
+
+.previous-semester .section-header h3 {
+  color: #6c757d;
+}
+
+.previous-semester .sem-course-item.read-only {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+  cursor: default;
+}
+
+.previous-semester .sem-course-item.read-only:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Confirmation Modal Styling */
+.confirmation-icon {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.confirmation-message {
+  text-align: center;
+  color: #4a5568;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Update section tabs to show dynamic numbering */
+.section-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.section-tab {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #4a5568;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.section-tab:hover {
+  border-color: #4299e1;
+  color: #4299e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.2);
+}
+
+.section-tab.active {
+  background-color: #4299e1;
+  border-color: #4299e1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(66, 153, 225, 0.4);
+}
+
+.section-tab.active::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #4299e1, #3182ce);
+  border-radius: 8px;
+  z-index: -1;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Enhanced pagination styling */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-btn {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #4a5568;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f7fafc;
+  border-color: #4299e1;
+  color: #4299e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.page-info {
+  color: #4a5568;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  background: #f7fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Delete Confirmation Modal Styling */
+.delete-icon {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.delete-message {
+  text-align: center;
+  color: #4a5568;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.delete-message strong {
+  color: #e53e3e;
+  font-weight: 700;
+}
+
+.delete-input-container {
+  margin-bottom: 2rem;
+}
+
+.delete-confirmation-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.delete-confirmation-input:focus {
+  outline: none;
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
+}
+
+.delete-confirmation-input::placeholder {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.delete-confirm-btn {
+  background-color: #e53e3e;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.delete-confirm-btn:hover:not(:disabled) {
+  background-color: #c53030;
+  transform: translateY(-1px);
+}
+
+.delete-confirm-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Semester Details Table Cell */
+.semester-details-cell {
+  padding: 0 !important;
+  border: none !important;
+}
+
+.semester-details-cell .semester-details {
+  margin: 0;
+  border-radius: 0;
+  border-left: 4px solid #4299e1;
+  background: white; /* Changed from #f8fafc to white */
+}
+
+/* Remove the old semester-details margin since it's now in table */
+.semesters-table .semester-details {
+  margin: 0;
+  border-radius: 0;
+  background: white; /* Ensure white background */
 }

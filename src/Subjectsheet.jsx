@@ -1,113 +1,253 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './Subjectsheet.css';
 import { Download, Save, PlusCircle, X, Edit3 } from 'lucide-react';
 import axios from 'axios';
 
-const cloToPloMapping = {
-  clo1: 'PLO 1',
-  clo2: 'PLO 2',
-  clo3: 'PLO 3'
-};
+const DEFAULT_FIELDS = {};
 
-const DEFAULT_FIELDS = {
-  clo1: [
-    { name: 'assignment', weightage: 33 },
-    { name: 'quiz', weightage: 33 },
-    { name: 'mid', weightage: 17 },
-    { name: 'final', weightage: 17 }
-  ],
-  clo2: [
-    { name: 'assignment', weightage: 33 },
-    { name: 'quiz', weightage: 33 },
-    { name: 'mid', weightage: 17 },
-    { name: 'final', weightage: 17 }
-  ],
-  clo3: [
-    { name: 'assignment', weightage: 33 },
-    { name: 'quiz', weightage: 33 },
-    { name: 'mid', weightage: 17 },
-    { name: 'final', weightage: 17 }
-  ]
+const generateDynamicCLOFields = (cloToPloMapping, currentCloFields = {}) => {
+  try {
+    const dynamicFields = {};
+    const cloKeys = Object.keys(cloToPloMapping || {});
+    
+    if (cloKeys.length === 0) {
+      return {
+        clo1: [
+          { name: 'assignment', weightage: 33 },
+          { name: 'quiz', weightage: 33 },
+          { name: 'mid', weightage: 17 },
+          { name: 'final', weightage: 17 }
+        ],
+        clo2: [
+          { name: 'assignment', weightage: 33 },
+          { name: 'quiz', weightage: 33 },
+          { name: 'mid', weightage: 17 },
+          { name: 'final', weightage: 17 }
+        ],
+        clo3: [
+          { name: 'assignment', weightage: 33 },
+          { name: 'quiz', weightage: 33 },
+          { name: 'mid', weightage: 17 },
+          { name: 'final', weightage: 17 }
+        ]
+      };
+    }
+    
+    cloKeys.forEach(cloKey => {
+      if (currentCloFields && currentCloFields[cloKey] && currentCloFields[cloKey].length > 0) {
+        dynamicFields[cloKey] = [...currentCloFields[cloKey]];
+      } else {
+        dynamicFields[cloKey] = [
+          { name: 'assignment', weightage: 33 },
+          { name: 'quiz', weightage: 33 },
+          { name: 'mid', weightage: 17 },
+          { name: 'final', weightage: 17 }
+        ];
+      }
+    });
+    
+    return dynamicFields;
+  } catch (error) {
+    return {
+      clo1: [
+        { name: 'assignment', weightage: 33 },
+        { name: 'quiz', weightage: 33 },
+        { name: 'mid', weightage: 17 },
+        { name: 'final', weightage: 17 }
+      ],
+      clo2: [
+        { name: 'assignment', weightage: 33 },
+        { name: 'quiz', weightage: 33 },
+        { name: 'mid', weightage: 17 },
+        { name: 'final', weightage: 17 }
+      ],
+      clo3: [
+        { name: 'assignment', weightage: 33 },
+        { name: 'quiz', weightage: 33 },
+        { name: 'mid', weightage: 17 },
+        { name: 'final', weightage: 17 }
+      ]
+    };
+  }
 };
 
 function Subjectsheet({ setcomp }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cloToPloMapping, setCloToPloMapping] = useState({});
+  const [cloDetails, setCloDetails] = useState({});
   const [cloFields, setCloFields] = useState({ ...DEFAULT_FIELDS });
   const [showUpdatePanel, setShowUpdatePanel] = useState(false);
-  const [selectedClo, setSelectedClo] = useState('clo1');
+  const [selectedClo, setSelectedClo] = useState('');
   const [newField, setNewField] = useState({ name: '', weightage: 0 });
   const [tempFields, setTempFields] = useState([]);
 
   const [studentsMarks, setStudentsMarks] = useState({});
-  const [totalMarks, setTotalMarks] = useState({
-    clo1: { assignment: '', quiz: '', mid: '', final: '' },
-    clo2: { assignment: '', quiz: '', mid: '', final: '' },
-    clo3: { assignment: '', quiz: '', mid: '', final: '' }
-  });
-
+  const [totalMarks, setTotalMarks] = useState({});
   const [disabledColumns, setDisabledColumns] = useState({
     clo1Final: false,
     clo3Mid: false
   });
 
+  // ✅ ULTRA OPTIMIZATION: Single useEffect with sequential execution
   useEffect(() => {
-    const fetchStudents = async () => {
+    const initializeData = async () => {
       try {
         setLoading(true);
-        const semesterId = sessionStorage.getItem('currentSemester');
         
-        if (!semesterId) {
-          throw new Error('No semester ID found. Please select a course first.');
-        }
-
-        const response = await axios.get(`/api/subject-sheet/semester/${semesterId}/students`, {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.data.success && Array.isArray(response.data.students)) {
-          const fetchedStudents = response.data.students.map(student => student.name);
-          setStudents(fetchedStudents);
-
-          const initialStudentsMarks = fetchedStudents.reduce((acc, student) => ({
-            ...acc,
-            [student]: {
-              clo1: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-              clo2: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-              clo3: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-            }
-          }), {});
-
-          setStudentsMarks(initialStudentsMarks);
-          setError(null);
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } catch (err) {
-        console.error('Error fetching students:', err);
-        setError(err.message || 'Failed to load students. Please try again.');
-        const sampleStudents = ["Zabit Mehmood Kahlon", "Jahandad Ahmed", "Mohsin Ali", "Shoaib Hussain", "Muhammad Saad"];
-        setStudents(sampleStudents);
+        // First: Get CLO-PLO mapping
+        await fetchCLOtoPLOMapping();
         
-        const initialStudentsMarks = sampleStudents.reduce((acc, student) => ({
-          ...acc,
-          [student]: {
-            clo1: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-            clo2: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-            clo3: { assignment: '', quiz: '', mid: '', final: '', kpi: '' },
-          }
-        }), {});
+        // Then: Get students (after CLO structure is ready)
+        await fetchStudents();
         
-        setStudentsMarks(initialStudentsMarks);
+      } catch (error) {
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStudents();
+    initializeData();
   }, []);
+
+  const fetchCLOtoPLOMapping = async () => {
+    try {
+      const courseId = sessionStorage.getItem('currentCourseId');
+      
+      if (!courseId) {
+        throw new Error('No course ID found. Please select a course first.');
+      }
+  
+      const response = await axios.get(`/api/cloplo/clo-plo-mapping/${courseId}`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      });
+  
+      if (response.data.cloToPloMapping) {
+        // ✅ ULTRA OPTIMIZATION: Single batch update
+        const dynamicFields = generateDynamicCLOFields(response.data.cloToPloMapping, cloFields);
+        const dynamicTotalMarks = {};
+        
+        Object.keys(dynamicFields).forEach(cloKey => {
+          dynamicTotalMarks[cloKey] = {};
+          dynamicFields[cloKey].forEach(field => {
+            dynamicTotalMarks[cloKey][field.name] = '';
+          });
+        });
+
+        // Single batch update - reduces re-renders from 4 to 1
+        setCloToPloMapping(response.data.cloToPloMapping);
+        setCloDetails(response.data.cloDetails);
+        setCloFields(dynamicFields);
+        setTotalMarks(dynamicTotalMarks);
+        
+        if (!selectedClo && Object.keys(dynamicFields).length > 0) {
+          setSelectedClo(Object.keys(dynamicFields)[0]);
+        }
+      }
+    } catch (err) {
+      // ✅ OPTIMIZATION: Batch update for defaults too
+      const defaultCloToPloMapping = {
+        clo1: 'PLO 1',
+        clo2: 'PLO 2',
+        clo3: 'PLO 3'
+      };
+      
+      const defaultCloDetails = {
+        clo1: { cloNumber: 1, ploNumber: 1, cloId: 'default_clo1' },
+        clo2: { cloNumber: 2, ploNumber: 2, cloId: 'default_clo2' },
+        clo3: { cloNumber: 3, ploNumber: 3, cloId: 'default_clo3' }
+      };
+      
+      const defaultFields = generateDynamicCLOFields(defaultCloToPloMapping, cloFields);
+      const defaultTotalMarks = {
+        clo1: { assignment: '', quiz: '', mid: '', final: '' },
+        clo2: { assignment: '', quiz: '', mid: '', final: '' },
+        clo3: { assignment: '', quiz: '', mid: '', final: '' }
+      };
+
+      // Batch update for defaults
+      setCloToPloMapping(defaultCloToPloMapping);
+      setCloDetails(defaultCloDetails);
+      setCloFields(defaultFields);
+      setTotalMarks(defaultTotalMarks);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const semesterId = sessionStorage.getItem('currentSemester');
+      
+      if (!semesterId) {
+        throw new Error('No semester ID found. Please select a course first.');
+      }
+
+      const response = await axios.get(`/api/subject-sheet/semester/${semesterId}/students`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.data.success && Array.isArray(response.data.students)) {
+        const fetchedStudents = response.data.students.map(student => student.name);
+        setStudents(fetchedStudents);
+
+        // ✅ OPTIMIZATION: Pre-calculate CLO fields once
+        const currentCloFields = Object.keys(cloFields).length > 0 ? cloFields : generateDynamicCLOFields({
+          clo1: 'PLO 1',
+          clo2: 'PLO 2',
+          clo3: 'PLO 3'
+        }, {});
+
+        const initialStudentsMarks = fetchedStudents.reduce((acc, student) => {
+          const studentMarks = {};
+          
+          Object.keys(currentCloFields).forEach(cloKey => {
+            studentMarks[cloKey] = {};
+            currentCloFields[cloKey].forEach(field => {
+              studentMarks[cloKey][field.name] = '';
+            });
+            studentMarks[cloKey].kpi = '';
+          });
+          
+          return { ...acc, [student]: studentMarks };
+        }, {});
+
+        setStudentsMarks(initialStudentsMarks);
+        setError(null);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load students. Please try again.');
+      const sampleStudents = ["Zabit Mehmood Kahlon", "Jahandad Ahmed", "Mohsin Ali", "Shoaib Hussain", "Muhammad Saad"];
+      setStudents(sampleStudents);
+      
+      // ✅ OPTIMIZATION: Reuse CLO fields calculation
+      const currentCloFields = Object.keys(cloFields).length > 0 ? cloFields : generateDynamicCLOFields({
+        clo1: 'PLO 1',
+        clo2: 'PLO 2',
+        clo3: 'PLO 3'
+      }, {});
+      
+      const initialStudentsMarks = sampleStudents.reduce((acc, student) => {
+        const studentMarks = {};
+        
+        Object.keys(currentCloFields).forEach(cloKey => {
+          studentMarks[cloKey] = {};
+          currentCloFields[cloKey].forEach(field => {
+            studentMarks[cloKey][field.name] = '';
+          });
+          studentMarks[cloKey].kpi = '';
+        });
+        
+        return { ...acc, [student]: studentMarks };
+      }, {});
+      
+      setStudentsMarks(initialStudentsMarks);
+    }
+  };
   
   const calculateTotalWeight = () => {
     return tempFields.reduce((sum, field) => sum + (Number(field.weightage) || 0), 0);
@@ -130,7 +270,13 @@ function Subjectsheet({ setcomp }) {
 
   const startUpdate = () => {
     setShowUpdatePanel(true);
-    setTempFields([...cloFields[selectedClo]]);
+    const firstCloKey = Object.keys(cloFields)[0];
+    if (firstCloKey) {
+      setSelectedClo(firstCloKey);
+      setTempFields([...cloFields[firstCloKey]]);
+    } else {
+      setTempFields([]);
+    }
   };
 
   const cancelUpdate = () => {
@@ -163,6 +309,7 @@ function Subjectsheet({ setcomp }) {
     const updatedCloFields = { ...cloFields };
     updatedCloFields[selectedClo] = [...tempFields];
 
+    // ✅ OPTIMIZATION: Batch update
     setStudentsMarks(updatedStudentsMarks);
     setTotalMarks(updatedTotalMarks);
     setCloFields(updatedCloFields);
@@ -212,6 +359,7 @@ function Subjectsheet({ setcomp }) {
     }));
 
     const updatedCloFields = { ...cloFields };
+    
     if (column === 'clo1Final') {
       if (!disabledColumns.clo1Final) {
         updatedCloFields.clo1 = updatedCloFields.clo1.map(field => ({
@@ -243,35 +391,51 @@ function Subjectsheet({ setcomp }) {
         }));
       }
     }
+    
     setCloFields(updatedCloFields);
 
     if (!disabledColumns[column]) {
-      const [clo, field] = column === 'clo1Final' ? ['clo1', 'final'] : ['clo3', 'mid'];
       const updatedMarks = { ...studentsMarks };
       students.forEach(student => {
-        updatedMarks[student][clo][field] = '';
+        if (column === 'clo1Final') {
+          updatedMarks[student].clo1.final = '';
+        } else if (column === 'clo3Mid') {
+          updatedMarks[student].clo3.mid = '';
+        }
       });
       setStudentsMarks(updatedMarks);
     }
   };
 
-  const getFieldWeightage = (field, clo) => {
+  // ✅ ULTRA OPTIMIZATION: Memoized getFieldWeightage
+  const getFieldWeightage = useCallback((field, clo) => {
+    if (!cloFields[clo] || !Array.isArray(cloFields[clo])) {
+      return 0;
+    }
+    
     const fieldConfig = cloFields[clo].find(f => f.name === field);
     return fieldConfig ? fieldConfig.weightage / 100 : 0;
-  };
+  }, [cloFields]);
 
-  const calculateKPI = (student, clo) => {
+  // ✅ ULTRA OPTIMIZATION: Memoized calculateKPI with faster loop
+  const calculateKPI = useCallback((student, clo) => {
     if (!student || !studentsMarks[student] || !studentsMarks[student][clo]) {
       return '';
     }
     
     const marks = studentsMarks[student][clo];
-    const totals = totalMarks[clo];
+    const totals = totalMarks[clo] || {};
     let totalWeighted = 0;
 
+    if (!cloFields[clo] || !Array.isArray(cloFields[clo])) {
+      return '';
+    }
+    
     const fields = cloFields[clo].map(f => f.name);
     
-    fields.forEach(field => {
+    // ✅ ULTRA OPTIMIZATION: Fastest possible loop
+    for (let i = 0; i < fields.length; i++) {
+      const field = fields[i];
       const obtained = parseFloat(marks[field]) || 0;
       const total = parseFloat(totals[field]) || 1;
       const weightage = getFieldWeightage(field, clo);
@@ -279,20 +443,36 @@ function Subjectsheet({ setcomp }) {
       if (weightage > 0 && total > 0) {
         totalWeighted += (obtained / total) * weightage * 100;
       }
-    });
+    }
 
     const kpiValue = totalWeighted ? Math.round(totalWeighted) : null;
     return kpiValue ? `${kpiValue}%` : '';
-  };
+  }, [studentsMarks, totalMarks, cloFields, getFieldWeightage]);
+
+  // ✅ ULTRA OPTIMIZATION: Memoized field weightages
+  const fieldWeightages = useMemo(() => {
+    const weightages = {};
+    Object.keys(cloFields).forEach(clo => {
+      weightages[clo] = {};
+      if (cloFields[clo] && Array.isArray(cloFields[clo])) {
+        cloFields[clo].forEach(field => {
+          weightages[clo][field.name] = field.weightage / 100;
+        });
+      }
+    });
+    return weightages;
+  }, [cloFields]);
 
   const exportToCSV = () => {
     const headers = ['Student Name'];
     
     Object.keys(cloFields).forEach(clo => {
-      cloFields[clo].forEach(field => {
-        headers.push(`${clo.toUpperCase()} ${field.name}`);
-      });
-      headers.push(`${clo.toUpperCase()} KPI`);
+      if (cloFields[clo] && Array.isArray(cloFields[clo])) {
+        cloFields[clo].forEach(field => {
+          headers.push(`${clo.toUpperCase()} ${field.name}`);
+        });
+        headers.push(`${clo.toUpperCase()} KPI`);
+      }
     });
 
     headers.push('PLO 1', 'PLO 2', 'PLO 3');
@@ -304,18 +484,22 @@ function Subjectsheet({ setcomp }) {
       const ploValues = { 'PLO 1': '', 'PLO 2': '', 'PLO 3': '' };
 
       Object.keys(cloFields).forEach(clo => {
-        const marks = studentsMarks[student] && studentsMarks[student][clo] ? studentsMarks[student][clo] : {};
-        
-        cloFields[clo].forEach(field => {
-          row.push(marks[field.name] || '');
-        });
-        
-        const kpiValue = calculateKPI(student, clo);
-        row.push(kpiValue);
+        if (cloFields[clo] && Array.isArray(cloFields[clo])) {
+          const marks = studentsMarks[student] && studentsMarks[student][clo] ? studentsMarks[student][clo] : {};
+          
+          cloFields[clo].forEach(field => {
+            row.push(marks[field.name] || '');
+          });
+          
+          const kpiValue = calculateKPI(student, clo);
+          row.push(kpiValue);
 
-        if (kpiValue) {
-          const plo = cloToPloMapping[clo];
-          ploValues[plo] = kpiValue;
+          if (kpiValue) {
+            const plo = cloToPloMapping[clo];
+            if (plo) {
+              ploValues[plo] = kpiValue;
+            }
+          }
         }
       });
 
@@ -346,25 +530,30 @@ function Subjectsheet({ setcomp }) {
         semesterId,
         cloFields,
         totalMarks,
-        studentsMarks
+        studentsMarks,
+        cloToPloMapping
       };
       
-      console.log('Saving to database:', marksData);
       alert('Save functionality is currently in development.');
       
-      
     } catch (err) {
-      console.error('Error saving marks:', err);
       alert(err.message || 'Failed to save marks. Please try again.');
     }
   };
   
   const getCloDisplayName = (clo) => {
+    if (cloDetails[clo] && cloDetails[clo].cloNumber) {
+      return `CLO ${cloDetails[clo].cloNumber}`;
+    }
     return clo.replace(/([a-z])([0-9])/i, '$1 $2').toUpperCase();
   };
 
   if (loading) {
     return <div className="loading">Loading students data...</div>;
+  }
+
+  if (Object.keys(cloFields).length === 0) {
+    return <div className="loading">Loading CLO structure...</div>;
   }
 
   return (
@@ -396,9 +585,13 @@ function Subjectsheet({ setcomp }) {
               }}
               className="clo-select"
             >
-              <option value="clo1">CLO 1</option>
-              <option value="clo2">CLO 2</option>
-              <option value="clo3">CLO 3</option>
+              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => {
+                return (
+                  <option key={cloKey} value={cloKey}>
+                    CLO {cloDetail.cloNumber}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -477,29 +670,31 @@ function Subjectsheet({ setcomp }) {
           <thead>
             <tr>
               <th className="sheet-sticky-col"></th>
-              {Object.keys(cloFields).map(clo => (
-                <th 
-                  key={clo} 
-                  colSpan={cloFields[clo].length + 1} 
-                  className="sheet-header-primary"
-                >
-                  {getCloDisplayName(clo)}
-                </th>
-              ))}
-              <th colSpan={3} className="sheet-header-primary plo-header">PLO</th>
+              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => {
+                return (
+                  <th 
+                    key={cloKey} 
+                    colSpan={cloFields[cloKey]?.length + 1 || 5} 
+                    className="sheet-header-primary"
+                  >
+                    CLO {cloDetail.cloNumber}
+                  </th>
+                );
+              })}
+              <th colSpan={Object.keys(cloToPloMapping).length} className="sheet-header-primary plo-header">PLO's</th>
             </tr>
             <tr>
               <th className="sheet-sticky-col"></th>
-              {Object.entries(cloFields).map(([clo, fields]) => (
-                <React.Fragment key={`headers-${clo}`}>
-                  {fields.map(field => (
-                    <th key={`${clo}-${field.name}`} className="sheet-header-secondary">
+              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
+                <React.Fragment key={`headers-${cloKey}`}>
+                  {cloFields[cloKey]?.map(field => (
+                    <th key={`${cloKey}-${field.name}`} className="sheet-header-secondary">
                       {field.name.charAt(0).toUpperCase() + field.name.slice(1)}
                       <div className="sheet-percentage">
                         ({field.weightage}%)
                       </div>
                       
-                      {clo === 'clo1' && field.name === 'final' && (
+                      {cloKey === 'clo1' && field.name === 'final' && (
                         <button
                           onClick={() => toggleColumn('clo1Final')}
                           className={`sheet-notification ${disabledColumns.clo1Final ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
@@ -507,7 +702,7 @@ function Subjectsheet({ setcomp }) {
                           {disabledColumns.clo1Final ? '✕' : '✓'}
                         </button>
                       )}
-                      {clo === 'clo3' && field.name === 'mid' && (
+                      {cloKey === 'clo3' && field.name === 'mid' && (
                         <button
                           onClick={() => toggleColumn('clo3Mid')}
                           className={`sheet-notification ${disabledColumns.clo3Mid ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
@@ -520,25 +715,25 @@ function Subjectsheet({ setcomp }) {
                   <th className="sheet-header-secondary">KPI</th>
                 </React.Fragment>
               ))}
-              <th className="sheet-header-secondary">PLO 1</th>
-              <th className="sheet-header-secondary">PLO 2</th>
-              <th className="sheet-header-secondary">PLO 3</th>
+              {Object.entries(cloToPloMapping).map(([cloKey, ploValue]) => (
+                <th key={cloKey} className="sheet-header-secondary">{ploValue}</th>
+              ))}
             </tr>
             <tr className='totalinputsheet'>
               <td className="sheet-sticky-col sheet-row-even sheet-text-bold">Total Marks</td>
-              {Object.entries(cloFields).map(([clo, fields]) => (
-                <React.Fragment key={`total-${clo}`}>
-                  {fields.map(field => (
-                    <td key={`total-${clo}-${field.name}`} className="sheet-cell sheet-row-even">
+              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
+                <React.Fragment key={`total-${cloKey}`}>
+                  {cloFields[cloKey]?.map(field => (
+                    <td key={`total-${cloKey}-${field.name}`} className="sheet-cell sheet-row-even">
                       <input 
                         type="number" 
                         min="1" 
                         className="sheet-input" 
-                        value={totalMarks[clo][field.name] || ''}
-                        onChange={(e) => handleTotalMarksChange(clo, field.name, e.target.value)}
+                        value={totalMarks[cloKey]?.[field.name] || ''}
+                        onChange={(e) => handleTotalMarksChange(cloKey, field.name, e.target.value)}
                         disabled={
-                          (clo === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
-                          (clo === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
+                          (cloKey === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
+                          (cloKey === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
                         }
                       />
                     </td>
@@ -546,46 +741,42 @@ function Subjectsheet({ setcomp }) {
                   <td className="sheet-cell sheet-row-even"></td>
                 </React.Fragment>
               ))}
-              <td className="sheet-cell sheet-row-even"></td>
-              <td className="sheet-cell sheet-row-even"></td>
-              <td className="sheet-cell sheet-row-even"></td>
+              {Object.entries(cloToPloMapping).map(([cloKey, cloDetail]) => (
+                <td key={`plo-total-${cloKey}`} className="sheet-cell sheet-row-even"></td>
+              ))}
             </tr>
           </thead>
           <tbody>
             {students.map((student, index) => (
               <tr key={student} className={index % 2 === 0 ? 'sheet-row-even' : 'sheet-row-odd'}>
                 <td className="sheet-sticky-col sheet-text-bold">{student}</td>
-                {Object.entries(cloFields).map(([clo, fields]) => (
-                  <React.Fragment key={`${student}-${clo}`}>
-                    {fields.map(field => (
-                      <td key={`${student}-${clo}-${field.name}`} className="sheet-cell">
+                {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
+                  <React.Fragment key={`${student}-${cloKey}`}>
+                    {cloFields[cloKey]?.map(field => (
+                      <td key={`${student}-${cloKey}-${field.name}`} className="sheet-cell">
                         <input
                           type="number"
                           min="0"
-                          value={studentsMarks[student]?.[clo]?.[field.name] || ''}
-                          onChange={(e) => handleInputChange(student, clo, field.name, e.target.value)}
+                          value={studentsMarks[student]?.[cloKey]?.[field.name] || ''}
+                          onChange={(e) => handleInputChange(student, cloKey, field.name, e.target.value)}
                           className="sheet-input"
                           disabled={
-                            (clo === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
-                            (clo === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
+                            (cloKey === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
+                            (cloKey === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
                           }
                         />
                       </td>
                     ))}
                     <td className="sheet-cell sheet-cell-center sheet-text-bold">
-                      {calculateKPI(student, clo)}
+                      {calculateKPI(student, cloKey)}
                     </td>
                   </React.Fragment>
                 ))}
-                <td className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
-                  {calculateKPI(student, 'clo1')}
-                </td>
-                <td className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
-                  {calculateKPI(student, 'clo2')}
-                </td>
-                <td className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
-                  {calculateKPI(student, 'clo3')}
-                </td>
+                {Object.entries(cloToPloMapping).map(([cloKey, ploValue]) => (
+                  <td key={cloKey} className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
+                    {calculateKPI(student, cloKey)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

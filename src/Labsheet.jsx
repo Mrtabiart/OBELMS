@@ -309,26 +309,33 @@ function Labsheet({ setcomp }) {
             setCloFields(fieldsFromDetails);
           }
 
+          // ✅ FIXED: DON'T override students from subject sheet
+          // Students should ALWAYS come from semester collection
+          // Only load marks data if students exist in the sheet
           if (currentSheet.students && currentSheet.students.length > 0) {
-            const studentsData = currentSheet.students.map(student => ({
-              id: student.studentId,
-              name: student.studentName,
-              rollNumber: student.rollNumber,
-              email: student.email
-            }));
-            setStudents(studentsData);
-
-            const marksData = {};
-            currentSheet.students.forEach(student => {
-              marksData[student.studentName] = {};
-              Object.keys(student.marks).forEach(cloKey => {
-                marksData[student.studentName][cloKey] = {
-                  ...student.marks[cloKey].fields,
-                  kpi: student.marks[cloKey].kpi || ''
-                };
+            console.log('Loading marks data for existing students');
+            
+            // Convert marks data - merge with existing students marks
+            setStudentsMarks(prevMarks => {
+              const newMarksData = { ...prevMarks };
+              
+              currentSheet.students.forEach(student => {
+                if (newMarksData[student.studentName]) {
+                  // Student exists, update their marks
+                  Object.keys(student.marks).forEach(cloKey => {
+                    newMarksData[student.studentName][cloKey] = {
+                      ...newMarksData[student.studentName][cloKey], // Keep existing structure
+                      ...student.marks[cloKey].fields,
+                      kpi: student.marks[cloKey].kpi || ''
+                    };
+                  });
+                }
+                // If student doesn't exist in current list, ignore (they're from semester)
               });
+              
+              console.log('Merged marks:', newMarksData);
+              return newMarksData;
             });
-            setStudentsMarks(marksData);
           }
 
           if (currentSheet.cloDetails) {
@@ -425,13 +432,14 @@ function Labsheet({ setcomp }) {
     setShowUpdatePanel(false);
   };
 
+  // ✅ FIXED: Add null check in handleInputChange
   const handleInputChange = (student, clo, field, value) => {
     setStudentsMarks(prev => ({
       ...prev,
       [student]: {
         ...prev[student],
         [clo]: {
-          ...prev[student][clo],
+          ...(prev[student]?.[clo] || {}), // ✅ FIXED: Add null check
           [field]: value
         }
       }

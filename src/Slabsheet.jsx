@@ -192,8 +192,32 @@ function Slabsheet({ setcomp }) {
 
       console.log('API Response:', response.data);
 
-      if (response.data.students && Array.isArray(response.data.students) && response.data.students.length > 0) {
-        // Take only the first student (current student)
+      // ✅ FIXED: Handle new response format
+      if (response.data.student) {
+        // New format: single student object
+        const studentData = {
+          id: response.data.student.id,
+          name: response.data.student.name,
+          rollNumber: response.data.student.rollNumber,
+          email: response.data.student.email
+        };
+        setStudent(studentData);
+
+        // Set marks for current student
+        if (response.data.studentMarks) {
+          console.log('Setting student marks:', response.data.studentMarks);
+          setStudentMarks({ [studentData.name]: response.data.studentMarks });
+        }
+
+        // Set total marks from API response
+        if (response.data.totalMarks) {
+          console.log('Setting total marks:', response.data.totalMarks);
+          setTotalMarks(response.data.totalMarks);
+        }
+        
+        setError(null);
+      } else if (response.data.students && Array.isArray(response.data.students) && response.data.students.length > 0) {
+        // Fallback: old format (for backward compatibility)
         const studentName = response.data.students[0];
         const studentData = {
           id: 'current-student',
@@ -203,23 +227,11 @@ function Slabsheet({ setcomp }) {
         };
         setStudent(studentData);
 
-        // Set marks for current student only
         if (response.data.studentMarks && response.data.studentMarks[1]) {
-          console.log('Setting student marks:', response.data.studentMarks[1]);
           setStudentMarks({ [studentName]: response.data.studentMarks[1] });
-        } else {
-          // Initialize with sample lab marks for testing
-          const sampleMarks = {
-            clo1: { 'Lab 1': '45', 'Lab 2': '48', 'Lab 3': '42', 'Lab 4': '50', 'Project/OpenendedLab': '85', 'Final Lab': '90', kpi: '87%' },
-            clo2: { 'Lab 1': '40', 'Lab 2': '45', 'Lab 3': '38', 'Lab 4': '42', 'Project/OpenendedLab': '80', 'Final Lab': '85', kpi: '78%' },
-            clo3: { 'Lab 1': '48', 'Lab 2': '50', 'Lab 3': '45', 'Lab 4': '48', 'Project/OpenendedLab': '88', 'Final Lab': '92', kpi: '85%' }
-          };
-          setStudentMarks({ [studentName]: sampleMarks });
         }
 
-        // Set total marks from API response
         if (response.data.totalMarks) {
-          console.log('Setting total marks:', response.data.totalMarks);
           setTotalMarks(response.data.totalMarks);
         }
         
@@ -230,6 +242,7 @@ function Slabsheet({ setcomp }) {
     } catch (err) {
       console.error('Error fetching student marks:', err);
       setError(err.message || 'Failed to load student marks. Please try again.');
+      
       // Fallback to dummy student with sample lab marks
       const dummyStudent = {
         id: 'dummy-student',

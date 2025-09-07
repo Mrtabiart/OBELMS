@@ -32,6 +32,11 @@ exports.getStudentMarks = async (req, res) => {
     const { subjectId, semesterId } = req.params;
     const studentId = req.session.user.id;
 
+    console.log('=== STUDENT MARKS REQUEST ===');
+    console.log('Subject ID:', subjectId);
+    console.log('Semester ID:', semesterId);
+    console.log('Student ID:', studentId);
+
     // Validate ObjectIds
     if (!mongoose.Types.ObjectId.isValid(subjectId) || 
         !mongoose.Types.ObjectId.isValid(semesterId) || 
@@ -39,27 +44,31 @@ exports.getStudentMarks = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID format" });
     }
 
-    // 🚀 OPTIMIZED QUERY - Only select needed fields
+    // ✅ FIXED: Find subject sheet and filter by specific student
     const subjectSheet = await SubjectSheet.findOne({
       semesterId: new mongoose.Types.ObjectId(semesterId),
       courseId: new mongoose.Types.ObjectId(subjectId)
     })
-    .select('students studentName marks cloDetails totalMarks')
-    .lean(); // Use lean() for better performance
+    .select('students cloDetails totalMarks')
+    .lean();
 
     if (!subjectSheet || !subjectSheet.students || subjectSheet.students.length === 0) {
-      // If no subject sheet found or no students, return dummy students
-      const dummyStudents = [
-        "Zabitdummy1",
-        "Zabitdummy2", 
-        "Zabitdummy3",
-        "Zabitdummy4",
-        "Zabitdummy5"
-      ];
+      console.log('No subject sheet found, returning dummy data');
+      // Return dummy student data
+      const dummyStudent = {
+        id: 'dummy-student',
+        name: 'Zabitdummy1',
+        rollNumber: 'FC-001',
+        email: 'zabitdummy1@example.com'
+      };
 
       return res.status(200).json({
-        students: dummyStudents,
-        studentMarks: {},
+        student: dummyStudent,
+        studentMarks: {
+          clo1: { assignment: '85', quiz: '42', mid: '45', final: '92', kpi: '88%' },
+          clo2: { assignment: '78', quiz: '38', mid: '42', final: '85', kpi: '76%' },
+          clo3: { assignment: '92', quiz: '48', mid: '47', final: '88', kpi: '84%' }
+        },
         cloDetails: {},
         totalMarks: {},
         isDummy: true,
@@ -67,54 +76,66 @@ exports.getStudentMarks = async (req, res) => {
       });
     }
 
-    // 🚀 OPTIMIZED DATA PROCESSING
-    const students = subjectSheet.students.map(student => student.studentName);
-    
-    // Create student marks object in the format expected by frontend
-    const studentMarks = {};
-    const totalMarks = {};
+    // ✅ FIXED: Find specific student by matching `studentId` in SubjectSheets collection
+    const targetStudent = subjectSheet.students.find(student => 
+      student.studentId && student.studentId.toString() === studentId.toString()
+    );
 
-    // Process in parallel using Promise.all
-    await Promise.all([
-      // Process student marks
-      new Promise((resolve) => {
-        subjectSheet.students.forEach((student, index) => {
-          const studentKey = index + 1;
-          studentMarks[studentKey] = {};
-          
-          if (student.marks && typeof student.marks === 'object') {
-            Object.entries(student.marks).forEach(([cloKey, cloData]) => {
-              if (cloData && cloData.fields) {
-                studentMarks[studentKey][cloKey] = {
-                  ...cloData.fields,
-                  kpi: cloData.kpi || ''
-                };
-              }
-            });
-          }
-        });
-        resolve();
-      }),
-      
-      // Process total marks
-      new Promise((resolve) => {
-        if (subjectSheet.cloDetails) {
-          Object.entries(subjectSheet.cloDetails).forEach(([cloKey, cloData]) => {
-            if (cloData && cloData.totalMarks) {
-              totalMarks[cloKey] = cloData.totalMarks;
-            }
-          });
+    console.log('Target student found:', !!targetStudent);
+    console.log('All students in sheet:', subjectSheet.students.map(s => ({
+      studentId: s.studentId,
+      studentName: s.studentName
+    })));
+
+    if (!targetStudent) {
+      console.log('Student not found in subject sheet');
+      return res.status(404).json({
+        message: "Student not found in this subject sheet",
+        studentId: studentId,
+        availableStudents: subjectSheet.students.map(s => ({
+          studentId: s.studentId,
+          studentName: s.studentName
+        }))
+      });
+    }
+
+    // ✅ FIXED: Return only the specific student's data
+    const studentData = {
+      id: targetStudent.studentId,
+      name: targetStudent.studentName,
+      rollNumber: targetStudent.rollNumber,
+      email: targetStudent.email
+    };
+
+    // Process marks for this specific student only
+    const studentMarks = {};
+    if (targetStudent.marks && typeof targetStudent.marks === 'object') {
+      Object.entries(targetStudent.marks).forEach(([cloKey, cloData]) => {
+        if (cloData && cloData.fields) {
+          studentMarks[cloKey] = {
+            ...cloData.fields,
+            kpi: cloData.kpi || ''
+          };
         }
-        resolve();
-      })
-    ]);
+      });
+    }
+
+    // Process total marks
+    const totalMarks = {};
+    if (subjectSheet.cloDetails) {
+      Object.entries(subjectSheet.cloDetails).forEach(([cloKey, cloData]) => {
+        if (cloData && cloData.totalMarks) {
+          totalMarks[cloKey] = cloData.totalMarks;
+        }
+      });
+    }
 
     const endTime = Date.now();
     console.log(`⚡ Backend processing time: ${endTime - startTime}ms`);
 
     return res.status(200).json({
-      students,
-      studentMarks,
+      student: studentData, // ✅ Single student object
+      studentMarks, // ✅ Only this student's marks
       cloDetails: subjectSheet.cloDetails || {},
       totalMarks,
       isDummy: false,

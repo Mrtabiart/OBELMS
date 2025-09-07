@@ -183,13 +183,37 @@ function StudentSheet({ setcomp }) {
       const response = await axios.get(`/api/student-marks/${selectedCourseId}/${selectedSemesterId}`, {
         withCredentials: true,
         headers: { 'Content-Type': 'application/json' },
-        timeout: 5000 // 5 second timeout
+        timeout: 5000
       });
 
       console.log('API Response:', response.data);
 
-      if (response.data.students && Array.isArray(response.data.students) && response.data.students.length > 0) {
-        // Take only the first student (current student)
+      // ✅ FIXED: Handle new response format
+      if (response.data.student) {
+        // New format: single student object
+        const studentData = {
+          id: response.data.student.id,
+          name: response.data.student.name,
+          rollNumber: response.data.student.rollNumber,
+          email: response.data.student.email
+        };
+        setStudent(studentData);
+
+        // Set marks for current student
+        if (response.data.studentMarks) {
+          console.log('Setting student marks:', response.data.studentMarks);
+          setStudentMarks({ [studentData.name]: response.data.studentMarks });
+        }
+
+        // Set total marks from API response
+        if (response.data.totalMarks) {
+          console.log('Setting total marks:', response.data.totalMarks);
+          setTotalMarks(response.data.totalMarks);
+        }
+        
+        setError(null);
+      } else if (response.data.students && Array.isArray(response.data.students) && response.data.students.length > 0) {
+        // Fallback: old format (for backward compatibility)
         const studentName = response.data.students[0];
         const studentData = {
           id: 'current-student',
@@ -199,23 +223,11 @@ function StudentSheet({ setcomp }) {
         };
         setStudent(studentData);
 
-        // Set marks for current student only
         if (response.data.studentMarks && response.data.studentMarks[1]) {
-          console.log('Setting student marks:', response.data.studentMarks[1]);
           setStudentMarks({ [studentName]: response.data.studentMarks[1] });
-        } else {
-          // Initialize with sample marks for testing
-          const sampleMarks = {
-            clo1: { assignment: '85', quiz: '42', mid: '45', final: '92', kpi: '88%' },
-            clo2: { assignment: '78', quiz: '38', mid: '42', final: '85', kpi: '76%' },
-            clo3: { assignment: '92', quiz: '48', mid: '47', final: '88', kpi: '84%' }
-          };
-          setStudentMarks({ [studentName]: sampleMarks });
         }
 
-        // Set total marks from API response
         if (response.data.totalMarks) {
-          console.log('Setting total marks:', response.data.totalMarks);
           setTotalMarks(response.data.totalMarks);
         }
         
@@ -226,6 +238,7 @@ function StudentSheet({ setcomp }) {
     } catch (err) {
       console.error('Error fetching student marks:', err);
       setError(err.message || 'Failed to load student marks. Please try again.');
+      
       // Fallback to dummy student with sample marks
       const dummyStudent = {
         id: 'dummy-student',
@@ -550,14 +563,14 @@ function StudentSheet({ setcomp }) {
                 );
               })}
             </tr>
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
       
       <div className="sheet-actions">
         <button onClick={exportToCSV} className="sheet-action-button">
           <Download size={20} /> Export to CSV
-          </button>
+        </button>
       </div>
     </div>
   );

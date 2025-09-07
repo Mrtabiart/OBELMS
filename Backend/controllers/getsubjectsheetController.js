@@ -31,7 +31,7 @@ exports.getStudentsForSemester = async (req, res) => {
       });
       
       students = lastSemesterContent.students.map(student => ({
-        id: student._id,
+        id: student.studentid,
         name: student.name,
         rollNumber: student.rollNumber,
         email: student.email

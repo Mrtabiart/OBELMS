@@ -55,6 +55,13 @@ const SubjectSheetSchema = new mongoose.Schema({
 
   students: [StudentMarksSchema],              // all students with their marks
 
+  // ✅ NEW: optional UI toggles (no requirement, default empty)
+  disabledColumns: {
+    type: Map,
+    of: Boolean,
+    default: {}
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

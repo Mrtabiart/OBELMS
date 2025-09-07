@@ -225,6 +225,18 @@ function Subjectsheet({ setcomp }) {
             console.log('Loading total marks:', totalMarksData);
             setTotalMarks(totalMarksData);
           }
+
+          const dc = currentSheet.disabledColumns;
+          // Handle Mongoose Map or plain object
+          const loadedDisabled = dc && typeof dc.toObject === 'function'
+            ? dc.toObject()
+            : (dc || {});
+
+          setDisabledColumns(prev => ({
+            clo1Final: false,
+            clo3Mid: false,
+            ...loadedDisabled
+          }));
         } else {
           console.log('No sheet found for this course');
         }
@@ -765,7 +777,8 @@ function Subjectsheet({ setcomp }) {
           };
           return acc;
         }, {}),
-        students: studentsData
+        students: studentsData,
+        disabledColumns // <-- add this
       };
 
       let response;

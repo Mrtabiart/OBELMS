@@ -3,8 +3,19 @@ import axios from 'axios';
 import './Tcourse.css';
 import { IoPeopleSharp } from "react-icons/io5";
 import { FaBookOpen } from "react-icons/fa";
+import { FaCalendarAlt } from "react-icons/fa";
 
 const CourseCard = ({ course, onClick }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="course-card" onClick={onClick}> 
       <div className="course-image">
@@ -19,6 +30,8 @@ const CourseCard = ({ course, onClick }) => {
         <p className="course-code">{course.code}</p>
         <div className="course-info">
           <p><i className="credit-icon"><FaBookOpen /></i> {course.creditHours} Credit Hours</p>
+          <p><i className="credit-icon"><IoPeopleSharp /></i> {course.teacherName}</p>
+          <p><i className="credit-icon"><FaCalendarAlt /></i> {formatDate(course.startDate)} - {formatDate(course.endDate)}</p>
         </div>
       </div>
     </div>
@@ -26,14 +39,15 @@ const CourseCard = ({ course, onClick }) => {
 };
 
 const StudentPanel = ({ setcomp }) => {
-  const [courses, setCourses] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSemester, setSelectedSemester] = useState(null);
+  const [semesterInfo, setSemesterInfo] = useState(null);
 
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        console.log('Fetching subjects...');
         const res = await axios.get('/api/student/subjects', {
           withCredentials: true,
           headers: { 
@@ -41,33 +55,44 @@ const StudentPanel = ({ setcomp }) => {
             'Accept': 'application/json'
           }
         });
-        
-        console.log('API Response:', res.data);
 
-        if (Array.isArray(res.data)) {
-          console.log('Response is an array, length:', res.data.length);
-          // Add default progress for each course
-          const coursesWithProgress = res.data.map(course => {
-            console.log('Processing course:', course);
-            return {
-              _id: course._id,
-              name: course.name,
-              code: course.code,
-              creditHours: course.creditHours,
-              isLab: course.isLab || false
-            };
-          });
-          console.log('Processed courses:', coursesWithProgress);
-          setCourses(coursesWithProgress);
+        // Expecting { groups: [ { semesterNumber, courses: [...] } ], semesterInfo: {...} }
+        const payload = res.data;
+        if (payload && Array.isArray(payload.groups)) {
+          // Sort groups by semesterNumber, and within each group courses by name/code
+          const normalized = payload.groups
+            .filter(g => g && typeof g.semesterNumber !== 'undefined')
+            .sort((a, b) => (a.semesterNumber || 0) - (b.semesterNumber || 0))
+            .map(g => ({
+              semesterNumber: g.semesterNumber,
+              courses: Array.isArray(g.courses) ? g.courses.map(c => ({
+                _id: c._id || c.subjectId,
+                name: c.name,
+                code: c.code,
+                creditHours: c.creditHours,
+                isLab: !!c.isLab,
+                teacherName: c.teacherName || 'Unknown Teacher',
+                semesterNumber: c.semesterNumber,
+                semesterId: c.semesterId,
+                startDate: c.startDate,
+                endDate: c.endDate,
+                session: c.session
+              })) : []
+            }));
+
+          setGroups(normalized);
+          setSemesterInfo(payload.semesterInfo || null);
+          // Set first semester as default selected
+          if (normalized.length > 0) {
+            setSelectedSemester(normalized[0].semesterNumber);
+          }
         } else {
-          console.error('Response is not an array:', res.data);
-          setCourses([]);
+          setGroups([]);
           setError("Invalid data format received from server");
         }
       } catch (err) {
-        console.error('Error details:', err.response || err);
         setError('Failed to load courses. Please try again later.');
-        setCourses([]);
+        setGroups([]);
       } finally {
         setLoading(false);
       }
@@ -77,15 +102,20 @@ const StudentPanel = ({ setcomp }) => {
   }, []);
 
   const handleCourseClick = (courseId) => {
-    // Store selected course ID in localStorage or context for the course detail page
     localStorage.setItem('selectedCourseId', courseId);
     setcomp("Ssheet");
+  };
+
+  const handleSemesterClick = (semesterNumber) => {
+    setSelectedSemester(semesterNumber);
   };
 
   if (loading) {
     return (
       <div className="teacher-panel">
-        <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
+        <div className="header-row">
+          <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
+        </div>
         <div className="loading-container">
           <p>Loading courses...</p>
         </div>
@@ -96,7 +126,9 @@ const StudentPanel = ({ setcomp }) => {
   if (error) {
     return (
       <div className="teacher-panel">
-        <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
+        <div className="header-row">
+          <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
+        </div>
         <div className="error-container">
           <p>{error}</p>
         </div>
@@ -104,22 +136,46 @@ const StudentPanel = ({ setcomp }) => {
     );
   }
 
+  const currentGroup = groups.find(g => g.semesterNumber === selectedSemester);
+
   return (
     <div className="teacher-panel">
-      <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
-      {courses.length === 0 ? (
+      <div className="header-row">
+        <button className="back-botn" onClick={() => setcomp("sdashboard")}>←</button>
+      </div>
+
+      {(!groups || groups.length === 0) ? (
         <div className="no-courses-container">
           <p>No courses assigned yet.</p>
         </div>
+      ) : currentGroup ? (
+        <div className="semester-group">
+          <div className="semester-pagination">
+            <div className="semester-buttons-container">
+              {groups.map(group => (
+                <button
+                  key={group.semesterNumber}
+                  className={`semester-btn ${selectedSemester === group.semesterNumber ? 'active' : ''}`}
+                  onClick={() => handleSemesterClick(group.semesterNumber)}
+                >
+                  {group.semesterNumber}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="courses-grid">
+            {currentGroup.courses.map(course => (
+              <CourseCard 
+                key={course._id} 
+                course={course}  
+                onClick={() => handleCourseClick(course._id)} 
+              />
+            ))}
+          </div>
+        </div>
       ) : (
-        <div className="courses-grid">
-          {courses.map(course => (
-            <CourseCard 
-              key={course._id} 
-              course={course}  
-              onClick={() => handleCourseClick(course._id)} 
-            />
-          ))}
+        <div className="no-courses-container">
+          <p>No courses found for selected semester.</p>
         </div>
       )}
     </div>

@@ -86,3 +86,97 @@
     font-size: 0.9rem;
     color: #666;
   }
+
+
+
+  /* ✅ NUML Loading Animation */
+.numl-loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  width: 100%;
+}
+
+.numl-loader {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.numl-letter {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  animation: bounce 1.5s ease-in-out infinite;
+  text-shadow: 0 4px 8px rgba(30, 58, 138, 0.3);
+}
+
+.numl-letter:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.numl-letter:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.numl-letter:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.numl-letter:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+    color: #1e3a8a;
+  }
+  40% {
+    transform: translateY(-20px);
+    color: #2563eb;
+  }
+  60% {
+    transform: translateY(-10px);
+    color: #3b82f6;
+  }
+}
+
+.loading-text {
+  font-size: 1.2rem;
+  color: #6b7280;
+  font-weight: 500;
+  animation: fade 2s ease-in-out infinite;
+}
+
+@keyframes fade {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ✅ Alternative pulse animation for NUML */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    color: #1e3a8a;
+  }
+  50% {
+    transform: scale(1.1);
+    color: #3b82f6;
+  }
+  100% {
+    transform: scale(1);
+    color: #1e3a8a;
+  }
+}
+
+/* You can switch to pulse animation by changing the animation property */
+/* .numl-letter {
+  animation: pulse 1.5s ease-in-out infinite;
+} */

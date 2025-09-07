@@ -16,7 +16,7 @@ const Subjectmap = ({ setcomp }) => {
   });
   
   const [currentClo, setCurrentClo] = useState({
-    number: "",
+    clonumber: "",
     passingPercentage: "",
     type: "",
     description: "",
@@ -136,7 +136,7 @@ const Subjectmap = ({ setcomp }) => {
   };
 
   const addMapping = () => {
-    if (!currentClo.number || !currentClo.passingPercentage || !selectedMainType || !selectedSubType || !currentClo.description || !currentClo.ploNumber) {
+    if (!currentClo.clonumber || !currentClo.passingPercentage || !selectedMainType || !selectedSubType || !currentClo.description || !currentClo.ploNumber) {
       setError("All CLO fields are required");
       return;
     }
@@ -153,7 +153,7 @@ const Subjectmap = ({ setcomp }) => {
     });
     
     setCurrentClo({ 
-      number: "", 
+      clonumber: "", 
       passingPercentage: "", 
       type: "", 
       description: "", 
@@ -365,8 +365,8 @@ const Subjectmap = ({ setcomp }) => {
               <input
                 type="text"
                 placeholder="CLO Number"
-                value={currentClo.number}
-                onChange={(e) => setCurrentClo({ ...currentClo, number: e.target.value })}
+                value={currentClo.clonumber}
+                onChange={(e) => setCurrentClo({ ...currentClo, clonumber: e.target.value })}
                 className="form-input"
               /> 
               <input
@@ -432,7 +432,7 @@ const Subjectmap = ({ setcomp }) => {
               {currentSubject.clos.map((clo, index) => (
                 <div key={index} className="mapping-item">
                   <span>
-                    CLO: {clo.number} → PLO: {clo.ploNumber} → Type: {clo.type} → Passing: {clo.passingPercentage}
+                    CLO: {clo.clonumber} → PLO: {clo.ploNumber} → Type: {clo.type} → Passing: {clo.passingPercentage}
                   </span>
                   <button
                     type="button"
@@ -540,7 +540,7 @@ const Subjectmap = ({ setcomp }) => {
                       <tbody>
                         {subject.clos.map((clo, mIndex) => (
                           <tr key={mIndex}>
-                            <td>{clo.number}</td>
+                            <td>{clo.clonumber}</td>
                             <td>{clo.ploNumber}</td>
                             <td>{clo.type}</td>
                             <td>{clo.passingPercentage}</td>

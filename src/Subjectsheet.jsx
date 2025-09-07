@@ -72,6 +72,7 @@ const generateDynamicCLOFields = (cloToPloMapping, currentCloFields = {}) => {
 };
 
 function Subjectsheet({ setcomp }) {
+  // ✅ UPDATED: Store complete student objects instead of just names
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -90,34 +91,161 @@ function Subjectsheet({ setcomp }) {
     clo3Mid: false
   });
 
-  // ✅ ULTRA OPTIMIZATION: Single useEffect with sequential execution
+  // ✅ NEW: State for subject sheet management
+  const [currentSheetId, setCurrentSheetId] = useState(null);
+  const [isNewSheet, setIsNewSheet] = useState(true);
+
+  // ✅ NEW: State for complete PLO data
+  const [completePLOData, setCompletePLOData] = useState({});
+
+  // ✅ ULTRA FAST: Load PLO data in background
   useEffect(() => {
     const initializeData = async () => {
       try {
         setLoading(true);
         
-        // First: Get CLO-PLO mapping
-        await fetchCLOtoPLOMapping();
+        // ✅ OPTIMIZATION: Load CLO-PLO mapping in background too
+        fetchCLOtoPLOMapping(); // Don't await this
         
         // Then: Get students (after CLO structure is ready)
         await fetchStudents();
         
+        // ✅ NEW: Try to load existing subject sheet
+        await loadExistingSubjectSheet();
+        
+        // ✅ OPTIMIZATION: Load PLO data in background (non-blocking)
+        loadCompletePLOData();
+        
       } catch (error) {
         setError(error.message);
       } finally {
-        setLoading(false);
+        setLoading(false); // ✅ This will show the sheet immediately
       }
     };
 
     initializeData();
   }, []);
 
+  // ✅ UPDATED: Load existing subject sheet with better debugging
+  const loadExistingSubjectSheet = async () => {
+    try {
+      const semesterId = sessionStorage.getItem('currentSemester');
+      const courseId = sessionStorage.getItem('currentCourseId');
+      
+      console.log('=== LOADING EXISTING SHEET ===');
+      console.log('Semester ID:', semesterId);
+      console.log('Course ID:', courseId);
+      
+      if (!semesterId || !courseId) {
+        console.log('Missing IDs, skipping load');
+        return;
+      }
+
+      const response = await axios.get(`/api/subject-sheets/semester/${semesterId}`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      console.log('API Response:', response.data);
+
+      if (response.data.success && response.data.subjectSheets.length > 0) {
+        console.log('Found sheets:', response.data.subjectSheets.length);
+        
+        // Find sheet for current course - check both populated and non-populated courseId
+        const currentSheet = response.data.subjectSheets.find(sheet => {
+          const sheetCourseId = sheet.courseId._id || sheet.courseId;
+          console.log('Comparing:', sheetCourseId, 'with', courseId);
+          return sheetCourseId === courseId;
+        });
+
+        console.log('Current sheet found:', !!currentSheet);
+
+        if (currentSheet) {
+          console.log('Loading sheet data:', currentSheet);
+          setCurrentSheetId(currentSheet._id);
+          setIsNewSheet(false);
+          
+          // Load existing data
+          if (currentSheet.cloToPloMapping) {
+            console.log('Loading CLO-PLO mapping:', currentSheet.cloToPloMapping);
+            setCloToPloMapping(currentSheet.cloToPloMapping);
+          }
+          
+          if (currentSheet.cloDetails) {
+            console.log('Loading CLO details:', currentSheet.cloDetails);
+            setCloDetails(currentSheet.cloDetails);
+            
+            // Convert cloDetails to cloFields format
+            const fieldsFromDetails = {};
+            Object.keys(currentSheet.cloDetails).forEach(cloKey => {
+              if (currentSheet.cloDetails[cloKey].fields) {
+                fieldsFromDetails[cloKey] = currentSheet.cloDetails[cloKey].fields;
+              }
+            });
+            console.log('Converted fields:', fieldsFromDetails);
+            setCloFields(fieldsFromDetails);
+          }
+
+          if (currentSheet.students && currentSheet.students.length > 0) {
+            console.log('Loading students:', currentSheet.students.length);
+            
+            // Convert students data to our format
+            const studentsData = currentSheet.students.map(student => ({
+              id: student.studentId,
+              name: student.studentName,
+              rollNumber: student.rollNumber,
+              email: student.email
+            }));
+            console.log('Converted students:', studentsData);
+            setStudents(studentsData);
+
+            // Convert marks data
+            const marksData = {};
+            currentSheet.students.forEach(student => {
+              marksData[student.studentName] = {};
+              Object.keys(student.marks).forEach(cloKey => {
+                marksData[student.studentName][cloKey] = {
+                  ...student.marks[cloKey].fields,
+                  kpi: student.marks[cloKey].kpi || ''
+                };
+              });
+            });
+            console.log('Converted marks:', marksData);
+            setStudentsMarks(marksData);
+          }
+
+          // Load total marks
+          if (currentSheet.cloDetails) {
+            const totalMarksData = {};
+            Object.keys(currentSheet.cloDetails).forEach(cloKey => {
+              if (currentSheet.cloDetails[cloKey].totalMarks) {
+                totalMarksData[cloKey] = currentSheet.cloDetails[cloKey].totalMarks;
+              }
+            });
+            console.log('Loading total marks:', totalMarksData);
+            setTotalMarks(totalMarksData);
+          }
+        } else {
+          console.log('No sheet found for this course');
+        }
+      } else {
+        console.log('No sheets found or API error');
+      }
+    } catch (error) {
+      console.log('Error loading existing sheet:', error.message);
+      // This is okay - we'll create a new sheet
+    }
+  };
+
+  // ✅ UPDATED: Non-blocking CLO-PLO mapping fetch
   const fetchCLOtoPLOMapping = async () => {
     try {
       const courseId = sessionStorage.getItem('currentCourseId');
       
       if (!courseId) {
-        throw new Error('No course ID found. Please select a course first.');
+        // Use defaults immediately
+        setDefaultCLOData();
+        return;
       }
   
       const response = await axios.get(`/api/cloplo/clo-plo-mapping/${courseId}`, {
@@ -148,32 +276,37 @@ function Subjectsheet({ setcomp }) {
         }
       }
     } catch (err) {
-      // ✅ OPTIMIZATION: Batch update for defaults too
-      const defaultCloToPloMapping = {
-        clo1: 'PLO 1',
-        clo2: 'PLO 2',
-        clo3: 'PLO 3'
-      };
-      
-      const defaultCloDetails = {
-        clo1: { cloNumber: 1, ploNumber: 1, cloId: 'default_clo1' },
-        clo2: { cloNumber: 2, ploNumber: 2, cloId: 'default_clo2' },
-        clo3: { cloNumber: 3, ploNumber: 3, cloId: 'default_clo3' }
-      };
-      
-      const defaultFields = generateDynamicCLOFields(defaultCloToPloMapping, cloFields);
-      const defaultTotalMarks = {
-        clo1: { assignment: '', quiz: '', mid: '', final: '' },
-        clo2: { assignment: '', quiz: '', mid: '', final: '' },
-        clo3: { assignment: '', quiz: '', mid: '', final: '' }
-      };
-
-      // Batch update for defaults
-      setCloToPloMapping(defaultCloToPloMapping);
-      setCloDetails(defaultCloDetails);
-      setCloFields(defaultFields);
-      setTotalMarks(defaultTotalMarks);
+      // Use defaults if API fails
+      setDefaultCLOData();
     }
+  };
+
+  // ✅ NEW: Set default CLO data immediately
+  const setDefaultCLOData = () => {
+    const defaultCloToPloMapping = {
+      clo1: 'PLO 1',
+      clo2: 'PLO 2',
+      clo3: 'PLO 3'
+    };
+    
+    const defaultCloDetails = {
+      clo1: { cloNumber: 1, ploNumber: 1, cloId: 'default_clo1' },
+      clo2: { cloNumber: 2, ploNumber: 2, cloId: 'default_clo2' },
+      clo3: { cloNumber: 3, ploNumber: 3, cloId: 'default_clo3' }
+    };
+    
+    const defaultFields = generateDynamicCLOFields(defaultCloToPloMapping, {});
+    const defaultTotalMarks = {
+      clo1: { assignment: '', quiz: '', mid: '', final: '' },
+      clo2: { assignment: '', quiz: '', mid: '', final: '' },
+      clo3: { assignment: '', quiz: '', mid: '', final: '' }
+    };
+
+    // Batch update for defaults
+    setCloToPloMapping(defaultCloToPloMapping);
+    setCloDetails(defaultCloDetails);
+    setCloFields(defaultFields);
+    setTotalMarks(defaultTotalMarks);
   };
 
   const fetchStudents = async () => {
@@ -190,7 +323,13 @@ function Subjectsheet({ setcomp }) {
       });
 
       if (response.data.success && Array.isArray(response.data.students)) {
-        const fetchedStudents = response.data.students.map(student => student.name);
+        // ✅ UPDATED: Store complete student objects
+        const fetchedStudents = response.data.students.map(student => ({
+          id: student.id,
+          name: student.name,
+          rollNumber: student.rollNumber,
+          email: student.email
+        }));
         setStudents(fetchedStudents);
 
         // ✅ OPTIMIZATION: Pre-calculate CLO fields once
@@ -211,7 +350,7 @@ function Subjectsheet({ setcomp }) {
             studentMarks[cloKey].kpi = '';
           });
           
-          return { ...acc, [student]: studentMarks };
+          return { ...acc, [student.name]: studentMarks };
         }, {});
 
         setStudentsMarks(initialStudentsMarks);
@@ -221,7 +360,13 @@ function Subjectsheet({ setcomp }) {
       }
     } catch (err) {
       setError(err.message || 'Failed to load students. Please try again.');
-      const sampleStudents = ["Zabit Mehmood Kahlon", "Jahandad Ahmed", "Mohsin Ali", "Shoaib Hussain", "Muhammad Saad"];
+      const sampleStudents = [
+        { id: '1', name: "Zabit Mehmood Kahlon", rollNumber: "FC-001", email: "zabit@example.com" },
+        { id: '2', name: "Jahandad Ahmed", rollNumber: "FC-002", email: "jahandad@example.com" },
+        { id: '3', name: "Mohsin Ali", rollNumber: "FC-003", email: "mohsin@example.com" },
+        { id: '4', name: "Shoaib Hussain", rollNumber: "FC-004", email: "shoaib@example.com" },
+        { id: '5', name: "Muhammad Saad", rollNumber: "FC-005", email: "saad@example.com" }
+      ];
       setStudents(sampleStudents);
       
       // ✅ OPTIMIZATION: Reuse CLO fields calculation
@@ -242,7 +387,7 @@ function Subjectsheet({ setcomp }) {
           studentMarks[cloKey].kpi = '';
         });
         
-        return { ...acc, [student]: studentMarks };
+        return { ...acc, [student.name]: studentMarks };
       }, {});
       
       setStudentsMarks(initialStudentsMarks);
@@ -297,7 +442,7 @@ function Subjectsheet({ setcomp }) {
 
     const updatedStudentsMarks = { ...studentsMarks };
     students.forEach(student => {
-      updatedStudentsMarks[student][selectedClo] = {
+      updatedStudentsMarks[student.name][selectedClo] = {
         ...newMarksStructure,
         kpi: ''
       };
@@ -398,9 +543,9 @@ function Subjectsheet({ setcomp }) {
       const updatedMarks = { ...studentsMarks };
       students.forEach(student => {
         if (column === 'clo1Final') {
-          updatedMarks[student].clo1.final = '';
+          updatedMarks[student.name].clo1.final = '';
         } else if (column === 'clo3Mid') {
-          updatedMarks[student].clo3.mid = '';
+          updatedMarks[student.name].clo3.mid = '';
         }
       });
       setStudentsMarks(updatedMarks);
@@ -463,8 +608,57 @@ function Subjectsheet({ setcomp }) {
     return weightages;
   }, [cloFields]);
 
+  // ✅ OPTIMIZATION: Faster PLO loading with caching
+  const loadCompletePLOData = async (force = false) => {
+    try {
+      if (!force && Object.keys(completePLOData).length > 0) {
+        console.log('PLO data already loaded, skipping...');
+        return;
+      }
+
+      const semesterId = sessionStorage.getItem('currentSemester');
+      if (!semesterId) return;
+
+      // show loading in PLO columns while refetching
+      if (force) setCompletePLOData({});
+
+      const response = await axios.get(`/api/subject-sheets/all-students-plo/${semesterId}`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000
+      });
+
+      if (response.data.success) {
+        setCompletePLOData(response.data.studentsPLOData);
+        console.log('Complete PLO data loaded:', response.data.studentsPLOData);
+      }
+    } catch (error) {
+      console.log('Error loading complete PLO data:', error.message);
+    }
+  };
+
+  // ✅ NEW: Calculate PLO percentage for a student (from all subjects)
+  const calculatePLOPercentage = useCallback((studentName, ploNumber) => {
+    // ✅ If PLO data not loaded yet, show loading indicator
+    if (Object.keys(completePLOData).length === 0) {
+      return '...'; // Show loading indicator
+    }
+
+    if (!completePLOData[studentName]) {
+      return '';
+    }
+
+    const ploData = completePLOData[studentName][`PLO ${ploNumber}`];
+    if (!ploData || ploData.validCLOs === 0) {
+      return '';
+    }
+
+    return `${ploData.percentage}%`;
+  }, [completePLOData]);
+
+  // ✅ UPDATED: Export CSV with complete PLO data
   const exportToCSV = () => {
-    const headers = ['Student Name'];
+    const headers = ['Student Name', 'Roll Number', 'Email'];
     
     Object.keys(cloFields).forEach(clo => {
       if (cloFields[clo] && Array.isArray(cloFields[clo])) {
@@ -475,35 +669,35 @@ function Subjectsheet({ setcomp }) {
       }
     });
 
-    headers.push('PLO 1', 'PLO 2', 'PLO 3');
+    // Add only linked PLO columns
+    Object.values(cloToPloMapping).forEach(ploValue => {
+      headers.push(ploValue);
+    });
 
     const csvRows = [headers];
 
     students.forEach(student => {
-      const row = [student];
-      const ploValues = { 'PLO 1': '', 'PLO 2': '', 'PLO 3': '' };
+      const row = [student.name, student.rollNumber, student.email];
 
       Object.keys(cloFields).forEach(clo => {
         if (cloFields[clo] && Array.isArray(cloFields[clo])) {
-          const marks = studentsMarks[student] && studentsMarks[student][clo] ? studentsMarks[student][clo] : {};
+          const marks = studentsMarks[student.name] && studentsMarks[student.name][clo] ? studentsMarks[student.name][clo] : {};
           
           cloFields[clo].forEach(field => {
             row.push(marks[field.name] || '');
           });
           
-          const kpiValue = calculateKPI(student, clo);
+          const kpiValue = calculateKPI(student.name, clo);
           row.push(kpiValue);
-
-          if (kpiValue) {
-            const plo = cloToPloMapping[clo];
-            if (plo) {
-              ploValues[plo] = kpiValue;
-            }
-          }
         }
       });
 
-      row.push(ploValues['PLO 1'], ploValues['PLO 2'], ploValues['PLO 3']);
+      // Add linked PLO percentages (calculated from all subjects)
+      Object.values(cloToPloMapping).forEach(ploValue => {
+        const ploNumber = ploValue.replace('PLO ', '');
+        row.push(calculatePLOPercentage(student.name, ploNumber));
+      });
+      
       csvRows.push(row);
     });
 
@@ -512,32 +706,95 @@ function Subjectsheet({ setcomp }) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'student_marks.csv';
+    a.download = 'student_marks_with_plo.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
+  // ✅ UPDATED: Complete save functionality with KPI calculation
   const saveToDatabase = async () => {
     try {
       const semesterId = sessionStorage.getItem('currentSemester');
+      const courseId = sessionStorage.getItem('currentCourseId');
       
-      if (!semesterId) {
-        alert('No semester ID found. Please select a course first.');
+      if (!semesterId || !courseId) {
+        alert('Missing required IDs. Please select a course first.');
         return;
       }
-      
+
+      // Prepare students data for database with calculated KPIs
+      const studentsData = students.map(student => {
+        const studentMarks = {};
+        
+        Object.keys(cloFields).forEach(cloKey => {
+          const marks = studentsMarks[student.name]?.[cloKey] || {};
+          const calculatedKPI = calculateKPI(student.name, cloKey);
+          
+          studentMarks[cloKey] = {
+            kpi: calculatedKPI,
+            fields: Object.keys(marks)
+              .filter(key => key !== 'kpi')
+              .reduce((fieldAcc, field) => {
+                fieldAcc[field] = marks[field] || '';
+                return fieldAcc;
+              }, {})
+          };
+        });
+
+        return {
+          studentId: student.id,
+          studentName: student.name,
+          rollNumber: student.rollNumber,
+          email: student.email,
+          marks: studentMarks
+        };
+      });
+
       const marksData = {
         semesterId,
-        cloFields,
-        totalMarks,
-        studentsMarks,
-        cloToPloMapping
+        courseId,
+        cloToPloMapping,
+        cloDetails: Object.keys(cloDetails).reduce((acc, cloKey) => {
+          acc[cloKey] = {
+            cloKey,
+            cloNumber: cloDetails[cloKey].cloNumber,
+            ploNumber: cloDetails[cloKey].ploNumber,
+            cloId: cloDetails[cloKey].cloId,
+            fields: cloFields[cloKey] || [],
+            totalMarks: totalMarks[cloKey] || {}
+          };
+          return acc;
+        }, {}),
+        students: studentsData
       };
-      
-      alert('Save functionality is currently in development.');
+
+      let response;
+      if (isNewSheet) {
+        // Create new sheet
+        response = await axios.post('/api/subject-sheets', marksData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        });
+        setCurrentSheetId(response.data.subjectSheet._id);
+        setIsNewSheet(false);
+      } else {
+        // Update existing sheet
+        response = await axios.put(`/api/subject-sheets/${currentSheetId}`, marksData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (response.data.success) {
+        alert('Subject sheet saved successfully!');
+        await loadCompletePLOData(true); // force refresh PLOs immediately
+      } else {
+        throw new Error(response.data.message || 'Failed to save');
+      }
       
     } catch (err) {
-      alert(err.message || 'Failed to save marks. Please try again.');
+      console.error('Save error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to save marks. Please try again.');
     }
   };
   
@@ -548,12 +805,43 @@ function Subjectsheet({ setcomp }) {
     return clo.replace(/([a-z])([0-9])/i, '$1 $2').toUpperCase();
   };
 
+  // ✅ NEW: Show loading state for PLO columns
+  const isPLODataLoading = Object.keys(completePLOData).length === 0;
+
+  // ✅ NEW: Show loading state for CLO data
+  const isCLODataLoading = Object.keys(cloToPloMapping).length === 0;
+
+  // ✅ UPDATED: Loading states with NUML animation
   if (loading) {
-    return <div className="loading">Loading students data...</div>;
+    return (
+      <div className="sheet-container">
+        <div className="numl-loading-container">
+          <div className="numl-loader">
+            <span className="numl-letter">N</span>
+            <span className="numl-letter">U</span>
+            <span className="numl-letter">M</span>
+            <span className="numl-letter">L</span>
+          </div>
+          {/* <div className="loading-text">Loading...</div> */}
+        </div>
+      </div>
+    );
   }
 
   if (Object.keys(cloFields).length === 0) {
-    return <div className="loading">Loading CLO structure...</div>;
+    return (
+      <div className="sheet-container">
+        <div className="numl-loading-container">
+          <div className="numl-loader">
+            <span className="numl-letter">N</span>
+            <span className="numl-letter">U</span>
+            <span className="numl-letter">M</span>
+            <span className="numl-letter">L</span>
+          </div>
+          <div className="loading-text">Preparing Sheet...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -564,7 +852,7 @@ function Subjectsheet({ setcomp }) {
       >
         ←
       </button>
-      
+
       {showUpdatePanel && (
         <div className="update-panel">
           <div className="update-panel-header">
@@ -670,77 +958,101 @@ function Subjectsheet({ setcomp }) {
           <thead>
             <tr>
               <th className="sheet-sticky-col"></th>
-              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => {
-                return (
-                  <th 
-                    key={cloKey} 
-                    colSpan={cloFields[cloKey]?.length + 1 || 5} 
-                    className="sheet-header-primary"
-                  >
-                    CLO {cloDetail.cloNumber}
-                  </th>
-                );
-              })}
-              <th colSpan={Object.keys(cloToPloMapping).length} className="sheet-header-primary plo-header">PLO's</th>
+              {isCLODataLoading ? (
+                // Show loading state for CLO headers
+                <th colSpan={4} className="sheet-header-primary">
+                  <span style={{ color: '#fff', fontSize: '14px' }}>Loading CLOs...</span>
+                </th>
+              ) : (
+                Object.entries(cloDetails).map(([cloKey, cloDetail]) => {
+                  return (
+                    <th 
+                      key={cloKey} 
+                      colSpan={cloFields[cloKey]?.length + 1 || 5} 
+                      className="sheet-header-primary"
+                    >
+                      CLO {cloDetail.cloNumber}
+                    </th>
+                  );
+                })
+              )}
+              <th colSpan={Object.keys(cloToPloMapping).length} className="sheet-header-primary plo-header">
+                PLOs (All Subjects)
+              </th>
             </tr>
             <tr>
               <th className="sheet-sticky-col"></th>
-              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
-                <React.Fragment key={`headers-${cloKey}`}>
-                  {cloFields[cloKey]?.map(field => (
-                    <th key={`${cloKey}-${field.name}`} className="sheet-header-secondary">
-                      {field.name.charAt(0).toUpperCase() + field.name.slice(1)}
-                      <div className="sheet-percentage">
-                        ({field.weightage}%)
-                      </div>
-                      
-                      {cloKey === 'clo1' && field.name === 'final' && (
-                        <button
-                          onClick={() => toggleColumn('clo1Final')}
-                          className={`sheet-notification ${disabledColumns.clo1Final ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
-                        >
-                          {disabledColumns.clo1Final ? '✕' : '✓'}
-                        </button>
-                      )}
-                      {cloKey === 'clo3' && field.name === 'mid' && (
-                        <button
-                          onClick={() => toggleColumn('clo3Mid')}
-                          className={`sheet-notification ${disabledColumns.clo3Mid ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
-                        >
-                          {disabledColumns.clo3Mid ? '✕' : '✓'}
-                        </button>
-                      )}
-                    </th>
-                  ))}
-                  <th className="sheet-header-secondary">KPI</th>
-                </React.Fragment>
-              ))}
+              {isCLODataLoading ? (
+                // Show loading state for field headers
+                <th colSpan={4} className="sheet-header-secondary">
+                  <span style={{ color: '#fff', fontSize: '12px' }}>Loading fields...</span>
+                </th>
+              ) : (
+                Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
+                  <React.Fragment key={`headers-${cloKey}`}>
+                    {cloFields[cloKey]?.map(field => (
+                      <th key={`${cloKey}-${field.name}`} className="sheet-header-secondary">
+                        {field.name.charAt(0).toUpperCase() + field.name.slice(1)}
+                        <div className="sheet-percentage">
+                          ({field.weightage}%)
+                        </div>
+                        
+                        {cloKey === 'clo1' && field.name === 'final' && (
+                          <button
+                            onClick={() => toggleColumn('clo1Final')}
+                            className={`sheet-notification ${disabledColumns.clo1Final ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
+                          >
+                            {disabledColumns.clo1Final ? '✕' : '✓'}
+                          </button>
+                        )}
+                        {cloKey === 'clo3' && field.name === 'mid' && (
+                          <button
+                            onClick={() => toggleColumn('clo3Mid')}
+                            className={`sheet-notification ${disabledColumns.clo3Mid ? 'sheet-notification-disabled' : 'sheet-notification-enabled'}`}
+                          >
+                            {disabledColumns.clo3Mid ? '✕' : '✓'}
+                          </button>
+                        )}
+                      </th>
+                    ))}
+                    <th className="sheet-header-secondary">KPI</th>
+                  </React.Fragment>
+                ))
+              )}
+              
+              {/* ✅ UPDATED: Show only linked PLOs */}
               {Object.entries(cloToPloMapping).map(([cloKey, ploValue]) => (
                 <th key={cloKey} className="sheet-header-secondary">{ploValue}</th>
               ))}
             </tr>
             <tr className='totalinputsheet'>
               <td className="sheet-sticky-col sheet-row-even sheet-text-bold">Total Marks</td>
-              {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
-                <React.Fragment key={`total-${cloKey}`}>
-                  {cloFields[cloKey]?.map(field => (
-                    <td key={`total-${cloKey}-${field.name}`} className="sheet-cell sheet-row-even">
-                      <input 
-                        type="number" 
-                        min="1" 
-                        className="sheet-input" 
-                        value={totalMarks[cloKey]?.[field.name] || ''}
-                        onChange={(e) => handleTotalMarksChange(cloKey, field.name, e.target.value)}
-                        disabled={
-                          (cloKey === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
-                          (cloKey === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
-                        }
-                      />
-                    </td>
-                  ))}
-                  <td className="sheet-cell sheet-row-even"></td>
-                </React.Fragment>
-              ))}
+              {isCLODataLoading ? (
+                <td colSpan={4} className="sheet-cell sheet-row-even">
+                  <span style={{ color: '#666', fontSize: '12px' }}>Loading...</span>
+                </td>
+              ) : (
+                Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
+                  <React.Fragment key={`total-${cloKey}`}>
+                    {cloFields[cloKey]?.map(field => (
+                      <td key={`total-${cloKey}-${field.name}`} className="sheet-cell sheet-row-even">
+                        <input 
+                          type="number" 
+                          min="1" 
+                          className="sheet-input" 
+                          value={totalMarks[cloKey]?.[field.name] || ''}
+                          onChange={(e) => handleTotalMarksChange(cloKey, field.name, e.target.value)}
+                          disabled={
+                            (cloKey === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
+                            (cloKey === 'clo3' && field.name === 'mid' && disabledColumns.clo3Mid)
+                          }
+                        />
+                      </td>
+                    ))}
+                    <td className="sheet-cell sheet-row-even"></td>
+                  </React.Fragment>
+                ))
+              )}
               {Object.entries(cloToPloMapping).map(([cloKey, cloDetail]) => (
                 <td key={`plo-total-${cloKey}`} className="sheet-cell sheet-row-even"></td>
               ))}
@@ -748,17 +1060,23 @@ function Subjectsheet({ setcomp }) {
           </thead>
           <tbody>
             {students.map((student, index) => (
-              <tr key={student} className={index % 2 === 0 ? 'sheet-row-even' : 'sheet-row-odd'}>
-                <td className="sheet-sticky-col sheet-text-bold">{student}</td>
+              <tr key={student.id} className={index % 2 === 0 ? 'sheet-row-even' : 'sheet-row-odd'}>
+                <td className="sheet-sticky-col sheet-text-bold">
+                  <div>
+                    <div className="student-name">{student.name}</div>
+                    <div className="student-roll">{student.rollNumber}</div>
+                    <div className="student-email">{student.email}</div>
+                  </div>
+                </td>
                 {Object.entries(cloDetails).map(([cloKey, cloDetail]) => (
-                  <React.Fragment key={`${student}-${cloKey}`}>
+                  <React.Fragment key={`${student.id}-${cloKey}`}>
                     {cloFields[cloKey]?.map(field => (
-                      <td key={`${student}-${cloKey}-${field.name}`} className="sheet-cell">
+                      <td key={`${student.id}-${cloKey}-${field.name}`} className="sheet-cell">
                         <input
                           type="number"
                           min="0"
-                          value={studentsMarks[student]?.[cloKey]?.[field.name] || ''}
-                          onChange={(e) => handleInputChange(student, cloKey, field.name, e.target.value)}
+                          value={studentsMarks[student.name]?.[cloKey]?.[field.name] || ''}
+                          onChange={(e) => handleInputChange(student.name, cloKey, field.name, e.target.value)}
                           className="sheet-input"
                           disabled={
                             (cloKey === 'clo1' && field.name === 'final' && disabledColumns.clo1Final) ||
@@ -768,15 +1086,24 @@ function Subjectsheet({ setcomp }) {
                       </td>
                     ))}
                     <td className="sheet-cell sheet-cell-center sheet-text-bold">
-                      {calculateKPI(student, cloKey)}
+                      {calculateKPI(student.name, cloKey)}
                     </td>
                   </React.Fragment>
                 ))}
-                {Object.entries(cloToPloMapping).map(([cloKey, ploValue]) => (
-                  <td key={cloKey} className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
-                    {calculateKPI(student, cloKey)}
-                  </td>
-                ))}
+                
+                {/* ✅ UPDATED: Show linked PLOs with complete calculation */}
+                {Object.entries(cloToPloMapping).map(([cloKey, ploValue]) => {
+                  const ploNumber = ploValue.replace('PLO ', '');
+                  return (
+                    <td key={cloKey} className="sheet-cell sheet-cell-center sheet-text-bold plo-cell">
+                      {isPLODataLoading ? (
+                        <span style={{ color: '#666', fontSize: '12px' }}>Loading...</span>
+                      ) : (
+                        calculatePLOPercentage(student.name, ploNumber)
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -787,10 +1114,10 @@ function Subjectsheet({ setcomp }) {
           <Download size={20} /> Export to CSV
         </button>
         <button onClick={saveToDatabase} className="sheet-action-button">
-          <Save size={20} /> Save Sheet
+          <Save size={20} /> {isNewSheet ? 'Save Sheet' : 'Update Sheet'}
         </button>
         <button onClick={startUpdate} className="sheet-action-button">
-          <Edit3 size={20} /> Update Sheet
+          <Edit3 size={20} /> Update Structure
         </button>
       </div>
     </div>

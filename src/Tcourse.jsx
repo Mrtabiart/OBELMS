@@ -77,9 +77,17 @@ const TeacherPanel = ({ setcomp }) => {
     return (
       <div className="teacher-panel">
         <button className="back-botn" onClick={() => setcomp("Dashboard")}>←</button>
-        <div className="loading-container">
-          <p>Loading courses...</p>
+        <div className="sheet-container">
+        <div className="numl-loading-container">
+          <div className="numl-loader">
+            <span className="numl-letter">N</span>
+            <span className="numl-letter">U</span>
+            <span className="numl-letter">M</span>
+            <span className="numl-letter">L</span>
+          </div>
+          {/* <div className="loading-text">Loading...</div> */}
         </div>
+      </div>
       </div>
     );
   }

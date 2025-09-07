@@ -66,17 +66,19 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/departments", require("./routes/departmentRoutes"));
 app.use("/api/programs", require("./routes/programRoutes"));
 app.use("/api/subjects", require("./routes/subjectRoutes"));
-app.use("/api/teachers", require("./routes/teacherRoutes")); // ✅ Yeh rahega
+app.use("/api/teachers", require("./routes/teacherRoutes"));
 app.use("/api/semesters", require("./routes/semesterRoutes"));
 app.use("/api/trash", require("./routes/trashRoutes"));
 app.use("/api/students", require("./routes/studentRoutes"));
 app.use("/api/teacher", require("./routes/getsubjectforteacherRoutes"));
 app.use("/api/student", require("./routes/getsubjectforstudentRoutes"));
-app.use("/api/subject-sheet", require("./routes/getsubjectsheetRoutes")); 
+app.use("/api/subject-sheet", require("./routes/getsubjectsheetRoutes")); // ✅ YEH ADD KARNA THA
+app.use("/api/subject-sheets", require("./routes/finalmarksallsubjectRoutes"));
 app.use("/api/lostfound", require("./routes/lostfoundRoutes"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`CLO-PLO mapping available at: http://localhost:${PORT}/api/cloplo/clo-plo-mapping/:courseId`);
+  console.log(`Subject sheet students available at: http://localhost:${PORT}/api/subject-sheet/semester/:semesterId/students`);
 });

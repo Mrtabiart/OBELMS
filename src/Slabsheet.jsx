@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import './Subjectsheet.css';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Download } from 'lucide-react';
 import axios from 'axios';
+import './Subjectsheet.css';
 
 const DEFAULT_FIELDS = {};
 
@@ -13,22 +13,28 @@ const generateDynamicCLOFields = (cloToPloMapping, currentCloFields = {}) => {
     if (cloKeys.length === 0) {
       return {
         clo1: [
-          { name: 'assignment', weightage: 33 },
-          { name: 'quiz', weightage: 33 },
-          { name: 'mid', weightage: 17 },
-          { name: 'final', weightage: 17 }
+          { name: 'Lab 1', weightage: 0 },
+          { name: 'Lab 2', weightage: 0 },
+          { name: 'Lab 3', weightage: 0 },
+          { name: 'Lab 4', weightage: 0 },
+          { name: 'Project/OpenendedLab', weightage: 0 },
+          { name: 'Final Lab', weightage: 0 }
         ],
         clo2: [
-          { name: 'assignment', weightage: 33 },
-          { name: 'quiz', weightage: 33 },
-          { name: 'mid', weightage: 17 },
-          { name: 'final', weightage: 17 }
+          { name: 'Lab 1', weightage: 0 },
+          { name: 'Lab 2', weightage: 0 },
+          { name: 'Lab 3', weightage: 0 },
+          { name: 'Lab 4', weightage: 0 },
+          { name: 'Project/OpenendedLab', weightage: 0 },
+          { name: 'Final Lab', weightage: 0 }
         ],
         clo3: [
-          { name: 'assignment', weightage: 33 },
-          { name: 'quiz', weightage: 33 },
-          { name: 'mid', weightage: 17 },
-          { name: 'final', weightage: 17 }
+          { name: 'Lab 1', weightage: 0 },
+          { name: 'Lab 2', weightage: 0 },
+          { name: 'Lab 3', weightage: 0 },
+          { name: 'Lab 4', weightage: 0 },
+          { name: 'Project/OpenendedLab', weightage: 0 },
+          { name: 'Final Lab', weightage: 0 }
         ]
       };
     }
@@ -38,10 +44,12 @@ const generateDynamicCLOFields = (cloToPloMapping, currentCloFields = {}) => {
         dynamicFields[cloKey] = [...currentCloFields[cloKey]];
       } else {
         dynamicFields[cloKey] = [
-          { name: 'assignment', weightage: 33 },
-          { name: 'quiz', weightage: 33 },
-          { name: 'mid', weightage: 17 },
-          { name: 'final', weightage: 17 }
+          { name: 'Lab 1', weightage: 0 },
+          { name: 'Lab 2', weightage: 0 },
+          { name: 'Lab 3', weightage: 0 },
+          { name: 'Lab 4', weightage: 0 },
+          { name: 'Project/OpenendedLab', weightage: 0 },
+          { name: 'Final Lab', weightage: 0 }
         ];
       }
     });
@@ -50,28 +58,34 @@ const generateDynamicCLOFields = (cloToPloMapping, currentCloFields = {}) => {
   } catch (error) {
     return {
       clo1: [
-        { name: 'assignment', weightage: 33 },
-        { name: 'quiz', weightage: 33 },
-        { name: 'mid', weightage: 17 },
-        { name: 'final', weightage: 17 }
+        { name: 'Lab 1', weightage: 0 },
+        { name: 'Lab 2', weightage: 0 },
+        { name: 'Lab 3', weightage: 0 },
+        { name: 'Lab 4', weightage: 0 },
+        { name: 'Project/OpenendedLab', weightage: 0 },
+        { name: 'Final Lab', weightage: 0 }
       ],
       clo2: [
-        { name: 'assignment', weightage: 33 },
-        { name: 'quiz', weightage: 33 },
-        { name: 'mid', weightage: 17 },
-        { name: 'final', weightage: 17 }
+        { name: 'Lab 1', weightage: 0 },
+        { name: 'Lab 2', weightage: 0 },
+        { name: 'Lab 3', weightage: 0 },
+        { name: 'Lab 4', weightage: 0 },
+        { name: 'Project/OpenendedLab', weightage: 0 },
+        { name: 'Final Lab', weightage: 0 }
       ],
       clo3: [
-        { name: 'assignment', weightage: 33 },
-        { name: 'quiz', weightage: 33 },
-        { name: 'mid', weightage: 17 },
-        { name: 'final', weightage: 17 }
+        { name: 'Lab 1', weightage: 0 },
+        { name: 'Lab 2', weightage: 0 },
+        { name: 'Lab 3', weightage: 0 },
+        { name: 'Lab 4', weightage: 0 },
+        { name: 'Project/OpenendedLab', weightage: 0 },
+        { name: 'Final Lab', weightage: 0 }
       ]
     };
   }
 };
 
-function StudentSheet({ setcomp }) {
+function Slabsheet({ setcomp }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -86,17 +100,10 @@ function StudentSheet({ setcomp }) {
     const initializeData = async () => {
       try {
         setLoading(true);
-        const startTime = performance.now();
         
-        //  PARALLEL API CALLS - All at once!
-        await Promise.allSettled([
-          fetchCLOtoPLOMapping(),
-          fetchStudentMarks(),
-          loadCompletePLOData()
-        ]);
-        
-        const endTime = performance.now();
-        console.log(`⚡ Total load time: ${(endTime - startTime).toFixed(2)}ms`);
+        fetchCLOtoPLOMapping();
+        await fetchStudentMarks();
+        loadCompletePLOData();
         
       } catch (error) {
         setError(error.message);
@@ -119,8 +126,7 @@ function StudentSheet({ setcomp }) {
   
       const response = await axios.get(`/api/cloplo/clo-plo-mapping/${selectedCourseId}`, {
         withCredentials: true,
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 5000 // 5 second timeout
+        headers: { 'Content-Type': 'application/json' }
       });
   
       if (response.data.cloToPloMapping) {
@@ -140,7 +146,6 @@ function StudentSheet({ setcomp }) {
         setTotalMarks(dynamicTotalMarks);
       }
     } catch (err) {
-      console.warn('CLO mapping failed, using defaults:', err.message);
       setDefaultCLOData();
     }
   };
@@ -160,9 +165,9 @@ function StudentSheet({ setcomp }) {
     
     const defaultFields = generateDynamicCLOFields(defaultCloToPloMapping, {});
     const defaultTotalMarks = {
-      clo1: { assignment: '100', quiz: '50', mid: '50', final: '100' },
-      clo2: { assignment: '100', quiz: '50', mid: '50', final: '100' },
-      clo3: { assignment: '100', quiz: '50', mid: '50', final: '100' }
+      clo1: { 'Lab 1': '50', 'Lab 2': '50', 'Lab 3': '50', 'Lab 4': '50', 'Project/OpenendedLab': '100', 'Final Lab': '100' },
+      clo2: { 'Lab 1': '50', 'Lab 2': '50', 'Lab 3': '50', 'Lab 4': '50', 'Project/OpenendedLab': '100', 'Final Lab': '100' },
+      clo3: { 'Lab 1': '50', 'Lab 2': '50', 'Lab 3': '50', 'Lab 4': '50', 'Project/OpenendedLab': '100', 'Final Lab': '100' }
     };
 
     setCloToPloMapping(defaultCloToPloMapping);
@@ -182,8 +187,7 @@ function StudentSheet({ setcomp }) {
 
       const response = await axios.get(`/api/student-marks/${selectedCourseId}/${selectedSemesterId}`, {
         withCredentials: true,
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 5000 // 5 second timeout
+        headers: { 'Content-Type': 'application/json' }
       });
 
       console.log('API Response:', response.data);
@@ -204,11 +208,11 @@ function StudentSheet({ setcomp }) {
           console.log('Setting student marks:', response.data.studentMarks[1]);
           setStudentMarks({ [studentName]: response.data.studentMarks[1] });
         } else {
-          // Initialize with sample marks for testing
+          // Initialize with sample lab marks for testing
           const sampleMarks = {
-            clo1: { assignment: '85', quiz: '42', mid: '45', final: '92', kpi: '88%' },
-            clo2: { assignment: '78', quiz: '38', mid: '42', final: '85', kpi: '76%' },
-            clo3: { assignment: '92', quiz: '48', mid: '47', final: '88', kpi: '84%' }
+            clo1: { 'Lab 1': '45', 'Lab 2': '48', 'Lab 3': '42', 'Lab 4': '50', 'Project/OpenendedLab': '85', 'Final Lab': '90', kpi: '87%' },
+            clo2: { 'Lab 1': '40', 'Lab 2': '45', 'Lab 3': '38', 'Lab 4': '42', 'Project/OpenendedLab': '80', 'Final Lab': '85', kpi: '78%' },
+            clo3: { 'Lab 1': '48', 'Lab 2': '50', 'Lab 3': '45', 'Lab 4': '48', 'Project/OpenendedLab': '88', 'Final Lab': '92', kpi: '85%' }
           };
           setStudentMarks({ [studentName]: sampleMarks });
         }
@@ -226,7 +230,7 @@ function StudentSheet({ setcomp }) {
     } catch (err) {
       console.error('Error fetching student marks:', err);
       setError(err.message || 'Failed to load student marks. Please try again.');
-      // Fallback to dummy student with sample marks
+      // Fallback to dummy student with sample lab marks
       const dummyStudent = {
         id: 'dummy-student',
         name: 'Zabitdummy1',
@@ -236,9 +240,9 @@ function StudentSheet({ setcomp }) {
       setStudent(dummyStudent);
       
       const sampleMarks = {
-        clo1: { assignment: '85', quiz: '42', mid: '45', final: '92', kpi: '88%' },
-        clo2: { assignment: '78', quiz: '38', mid: '42', final: '85', kpi: '76%' },
-        clo3: { assignment: '92', quiz: '48', mid: '47', final: '88', kpi: '84%' }
+        clo1: { 'Lab 1': '45', 'Lab 2': '48', 'Lab 3': '42', 'Lab 4': '50', 'Project/OpenendedLab': '85', 'Final Lab': '90', kpi: '87%' },
+        clo2: { 'Lab 1': '40', 'Lab 2': '45', 'Lab 3': '38', 'Lab 4': '42', 'Project/OpenendedLab': '80', 'Final Lab': '85', kpi: '78%' },
+        clo3: { 'Lab 1': '48', 'Lab 2': '50', 'Lab 3': '45', 'Lab 4': '48', 'Project/OpenendedLab': '88', 'Final Lab': '92', kpi: '85%' }
       };
       
       setStudentMarks({ [dummyStudent.name]: sampleMarks });
@@ -296,14 +300,14 @@ function StudentSheet({ setcomp }) {
       const response = await axios.get(`/api/subject-sheets/all-students-plo/${selectedSemesterId}`, {
         withCredentials: true,
         headers: { 'Content-Type': 'application/json' },
-        timeout: 5000 // 5 second timeout
+        timeout: 10000
       });
 
       if (response.data.success) {
         setCompletePLOData(response.data.studentsPLOData);
       }
     } catch (error) {
-      console.warn('PLO data loading failed:', error.message);
+      console.log('Error loading complete PLO data:', error.message);
     }
   };
 
@@ -371,7 +375,7 @@ function StudentSheet({ setcomp }) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'student_marks.csv';
+    a.download = 'lab_student_marks.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -411,7 +415,7 @@ function StudentSheet({ setcomp }) {
             <span className="numl-letter">M</span>
             <span className="numl-letter">L</span>
           </div>
-          <div className="loading-text">Preparing Sheet...</div>
+          <div className="loading-text">Preparing Lab Sheet...</div>
         </div>
       </div>
     );
@@ -429,17 +433,17 @@ function StudentSheet({ setcomp }) {
 
   return (
     <div className="sheet-container">
-        <button 
+      <button 
         className="back-botnn"
-          onClick={() => setcomp("Scourse")}
-        >
-          ←
-        </button>
+        onClick={() => setcomp("Scourse")}
+      >
+        ←
+      </button>
 
       <div className="sheet-wrapper">
         <table className="sheet-table">
-            <thead>
-              <tr>
+          <thead>
+            <tr>
               <th className="sheet-sticky-col"></th>
               {isCLODataLoading ? (
                 <th colSpan={4} className="sheet-header-primary">
@@ -450,7 +454,7 @@ function StudentSheet({ setcomp }) {
                   return (
                     <th 
                       key={cloKey} 
-                      colSpan={cloFields[cloKey]?.length + 1 || 5} 
+                      colSpan={cloFields[cloKey]?.length + 1 || 7} 
                       className="sheet-header-primary"
                     >
                       CLO {cloDetail.cloNumber}
@@ -461,7 +465,7 @@ function StudentSheet({ setcomp }) {
               <th colSpan={Object.keys(cloToPloMapping).length} className="sheet-header-primary plo-header">
                 PLOs (All Subjects)
               </th>
-              </tr>
+            </tr>
             <tr>
               <th className="sheet-sticky-col"></th>
               {isCLODataLoading ? (
@@ -473,10 +477,7 @@ function StudentSheet({ setcomp }) {
                   <React.Fragment key={`headers-${cloKey}`}>
                     {cloFields[cloKey]?.map(field => (
                       <th key={`${cloKey}-${field.name}`} className="sheet-header-secondary">
-                        {field.name.charAt(0).toUpperCase() + field.name.slice(1)}
-                        <div className="sheet-percentage">
-                          ({field.weightage}%)
-                        </div>
+                        {field.name}
                       </th>
                     ))}
                     <th className="sheet-header-secondary">KPI</th>
@@ -532,7 +533,7 @@ function StudentSheet({ setcomp }) {
                     </td>
                   ))}
                   <td className="sheet-cell sheet-cell-center sheet-text-bold">
-                    {calculateKPI(student.name, cloKey)}
+                    {studentMarks[student.name]?.[cloKey]?.kpi || calculateKPI(student.name, cloKey)}
                   </td>
                 </React.Fragment>
               ))}
@@ -550,17 +551,17 @@ function StudentSheet({ setcomp }) {
                 );
               })}
             </tr>
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
       
       <div className="sheet-actions">
         <button onClick={exportToCSV} className="sheet-action-button">
           <Download size={20} /> Export to CSV
-          </button>
+        </button>
       </div>
     </div>
   );
 }
 
-export default StudentSheet;
+export default Slabsheet;

@@ -74,6 +74,7 @@ app.use("/api/teacher", require("./routes/getsubjectforteacherRoutes"));
 app.use("/api/student", require("./routes/getsubjectforstudentRoutes"));
 app.use("/api/subject-sheet", require("./routes/getsubjectsheetRoutes")); // ✅ YEH ADD KARNA THA
 app.use("/api/subject-sheets", require("./routes/finalmarksallsubjectRoutes"));
+app.use("/api/student-marks", require("./routes/getstudentmarksRoutes")); // ✅ NEW ROUTE
 app.use("/api/lostfound", require("./routes/lostfoundRoutes"));
 
 const PORT = process.env.PORT || 5000;

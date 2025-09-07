@@ -29,6 +29,7 @@ import Labsheet from "./Labsheet"
 import Gpacalculator from "./Gpacalculator";  
 import Lostfoundadmin from "./Lostfoundadmin";
 import LostfoundStudent from "./Lostfoundstudent";
+import Slabsheet from "./Slabsheet";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -147,6 +148,8 @@ function App() {
         return <Scourse setcomp={setActiveComponent} />;
       case "Ssheet":
         return <Ssheet setcomp={setActiveComponent} />;
+      case "Slabsheet":
+        return <Slabsheet setcomp={setActiveComponent} />;
       case "Logout":
         return <Dashboard />;
       case "Lost & Found":

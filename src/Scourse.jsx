@@ -101,9 +101,16 @@ const StudentPanel = ({ setcomp }) => {
     fetchSubjects();
   }, []);
 
-  const handleCourseClick = (courseId) => {
-    localStorage.setItem('selectedCourseId', courseId);
-    setcomp("Ssheet");
+  const handleCourseClick = (course) => {
+    localStorage.setItem('selectedCourseId', course._id);
+    localStorage.setItem('selectedSemesterId', course.semesterId);
+    
+    // Check if course is lab, then go to slabsheet, otherwise go to Ssheet
+    if (course.isLab) {
+      setcomp("Slabsheet");
+    } else {
+      setcomp("Ssheet");
+    }
   };
 
   const handleSemesterClick = (semesterNumber) => {
@@ -168,7 +175,7 @@ const StudentPanel = ({ setcomp }) => {
               <CourseCard 
                 key={course._id} 
                 course={course}  
-                onClick={() => handleCourseClick(course._id)} 
+                onClick={() => handleCourseClick(course)} 
               />
             ))}
           </div>
